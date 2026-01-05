@@ -427,7 +427,8 @@ const ProductsPage = () => {
                           const newUrls: string[] = [];
 
                           validFiles.forEach((file, fileIndex) => {
-                            const fileKey = `uploaded_${Date.now()}_${fileIndex}`;
+                            const currentImageCount = formData.images.split(',').filter(u => u.trim()).length;
+                            const fileKey = `uploaded_${currentImageCount + fileIndex}`;
                             newUrls.push(`data:${file.type};name=${file.name}`);
 
                             const reader = new FileReader();
