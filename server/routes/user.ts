@@ -519,11 +519,17 @@ router.post('/influencer/apply', async (req: AuthRequest, res: Response) => {
   try {
     const existing = await Influencer.findOne({ userId: req.userId });
     if (existing) return res.status(400).json({ message: 'Application already exists' });
-    
-    const { name, email, phone, username, bio, socialLinks } = req.body;
-    
-    if (!name || !email || !phone || !username) {
-      return res.status(400).json({ message: 'Name, email, phone, and username are required' });
+
+    // Fetch user's name and email from their profile
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const { phone, username, bio, socialLinks } = req.body;
+    const name = user.name;
+    const email = user.email;
+
+    if (!phone || !username) {
+      return res.status(400).json({ message: 'Phone and username are required' });
     }
     
     const existingUsername = await Influencer.findOne({ username: username.toLowerCase() });
