@@ -201,12 +201,28 @@ const ProductsPage = () => {
         colorVariants: colorVariantsToSend
       });
 
+      let savedProductId: string;
+
       if (editingProduct) {
-        await api.put(`/admin/products/${editingProduct._id}`, payload);
+        savedProductId = editingProduct._id;
+        await api.put(`/admin/products/${savedProductId}`, payload);
         toast({ title: "Product updated successfully" });
       } else {
-        await api.post('/admin/products', payload);
+        const response = await api.post<any>('/admin/products', payload);
+        savedProductId = response._id;
         toast({ title: "Product created successfully" });
+      }
+
+      // Verify the saved product has colorVariants by fetching it directly
+      try {
+        const savedProduct = await api.get<Product>(`/admin/products/${savedProductId}`);
+        console.log('Verification - Saved product colorVariants:', {
+          hasColorVariants: !!savedProduct.colorVariants,
+          count: savedProduct.colorVariants?.length || 0,
+          data: savedProduct.colorVariants
+        });
+      } catch (err) {
+        console.log('Could not verify saved product');
       }
 
       setIsDialogOpen(false);
