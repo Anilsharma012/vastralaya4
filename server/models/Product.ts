@@ -18,6 +18,11 @@ export interface ISizeInventory {
   XXL?: number;
 }
 
+export interface IColorVariant {
+  color: string;
+  images: string[];
+}
+
 export interface IProductVariant {
   size?: string;
   color?: string;
@@ -41,6 +46,7 @@ export interface IProduct extends Document {
   sku: string;
   stock: number;
   variants: IProductVariant[];
+  colorVariants?: IColorVariant[];
   sizeInventory?: ISizeInventory;
   attributes: Record<string, string>;
   tags: string[];
@@ -62,6 +68,11 @@ const SizeInventorySchema = new Schema({
   XL: { type: Number, default: 0 },
   XXL: { type: Number, default: 0 },
 }, { _id: false });
+
+const ColorVariantSchema = new Schema({
+  color: { type: String, required: true },
+  images: [{ type: String }],
+}, { _id: true });
 
 const SizeChartRowSchema = new Schema({
   size: { type: String, required: true },
@@ -95,6 +106,7 @@ const ProductSchema = new Schema<IProduct>({
   sku: { type: String, required: true, unique: true },
   stock: { type: Number, default: 0 },
   variants: [ProductVariantSchema],
+  colorVariants: [ColorVariantSchema],
   sizeInventory: SizeInventorySchema,
   attributes: { type: Map, of: String },
   tags: [{ type: String }],

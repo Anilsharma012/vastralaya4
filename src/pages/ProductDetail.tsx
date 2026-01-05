@@ -38,6 +38,11 @@ interface ProductData {
     stock: number;
     images?: string[];
   }>;
+  colorVariants?: Array<{
+    _id: string;
+    color: string;
+    images: string[];
+  }>;
   attributes: Record<string, string>;
   tags: string[];
   sizeChart?: {
