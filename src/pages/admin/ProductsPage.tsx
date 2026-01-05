@@ -98,6 +98,14 @@ const ProductsPage = () => {
     XXL: 0
   });
 
+  const [colorVariants, setColorVariants] = useState<Array<{
+    color: string;
+    images: string[];
+  }>>([]);
+  const [showColorVariantsForm, setShowColorVariantsForm] = useState(false);
+  const [newColorName, setNewColorName] = useState('');
+  const [editingColorIndex, setEditingColorIndex] = useState<number | null>(null);
+
   const generateSlug = (name: string) => {
     return name
       .toLowerCase()
