@@ -428,15 +428,12 @@ const ProductsPage = () => {
                           // Convert files to base64 and upload
                           let filesProcessed = 0;
                           const base64Images: string[] = [];
-                          const newPreviews = new Map(imagePreviews);
 
                           validFiles.forEach((file, fileIndex) => {
                             const reader = new FileReader();
                             reader.onload = async (event: any) => {
                               const base64Data = event.target.result;
                               base64Images[fileIndex] = base64Data;
-                              const imageIndex = formData.images.split(',').filter(u => u.trim()).length + fileIndex;
-                              newPreviews.set(imageIndex, base64Data);
                               filesProcessed++;
 
                               if (filesProcessed === validFiles.length) {
