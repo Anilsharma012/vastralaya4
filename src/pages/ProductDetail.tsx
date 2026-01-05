@@ -958,7 +958,7 @@ const ProductDetail = () => {
                         accept="image/*"
                         multiple
                         onChange={handleReviewImageChange}
-                        disabled={submittingReview}
+                        disabled={submittingReview || userOrders.length === 0}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                         data-testid="input-review-images"
                       />
