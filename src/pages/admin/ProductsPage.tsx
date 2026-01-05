@@ -506,48 +506,33 @@ const ProductsPage = () => {
                         accept="image/*"
                         onChange={async (e) => {
                           const files = e.currentTarget.files;
-                          if (files) {
-                            for (let i = 0; i < files.length; i++) {
-                              const file = files[i];
-                              try {
-                                const formDataToSend = new FormData();
-                                formDataToSend.append('file', file);
+                          if (!files || files.length === 0) return;
 
-                                const uploadResponse = await fetch('/api/admin/upload-image', {
-                                  method: 'POST',
-                                  body: formDataToSend,
-                                  headers: {
-                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                                  }
-                                });
+                          let uploadedCount = 0;
+                          for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            try {
+                              const formDataToSend = new FormData();
+                              formDataToSend.append('file', file);
 
-                                if (!uploadResponse.ok) {
-                                  const error = await uploadResponse.json();
-                                  toast({
-                                    title: `Failed to upload ${file.name}`,
-                                    description: error.message || 'Upload failed',
-                                    variant: "destructive"
-                                  });
-                                  continue;
-                                }
-
-                                const uploadData = await uploadResponse.json();
-                                const urls = formData.images.split(',').filter(u => u.trim());
-                                urls.push(uploadData.url);
-                                setFormData({ ...formData, images: urls.join(', ') });
-                              } catch (error: any) {
-                                toast({
-                                  title: `Failed to upload ${file.name}`,
-                                  description: error.message || 'Network error',
-                                  variant: "destructive"
-                                });
-                              }
+                              const uploadData = await api.post<{ url: string; filename: string; size: number; mimetype: string }>('/admin/upload-image', formDataToSend);
+                              const urls = formData.images.split(',').map(u => u.trim()).filter(Boolean);
+                              urls.push(uploadData.url);
+                              setFormData({ ...formData, images: urls.join(', ') });
+                              uploadedCount++;
+                            } catch (error: any) {
+                              toast({
+                                title: `Failed to upload ${file.name}`,
+                                description: error.message || 'Upload failed',
+                                variant: "destructive"
+                              });
                             }
+                          }
+                          if (uploadedCount > 0) {
                             toast({
-                              title: `Image(s) uploaded successfully`,
+                              title: `${uploadedCount} image(s) uploaded successfully`,
                               description: "Ready to save your product"
                             });
-                            e.currentTarget.value = '';
                           }
                         }}
                         className="hidden"
