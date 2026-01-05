@@ -357,6 +357,7 @@ router.post('/products', async (req: AuthRequest, res: Response) => {
       images: images || [], price, comparePrice, sku, stock: stock || 0,
       variants: variants || [], attributes: attributes || {},
       tags: tags || [], sizeChart: sizeChart || undefined, sizeInventory: sizeInventory || undefined,
+      colorVariants: colorVariants || undefined,
       isActive: isActive !== undefined ? isActive : true,
       isFeatured: isFeatured || false, isNewArrival: isNewArrival || false, isBestSeller: isBestSeller || false
     });
