@@ -18,6 +18,11 @@ export interface ISizeInventory {
   XXL?: number;
 }
 
+export interface IColorVariant {
+  color: string;
+  images: string[];
+}
+
 export interface IProductVariant {
   size?: string;
   color?: string;
