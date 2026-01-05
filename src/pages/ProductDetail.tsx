@@ -604,6 +604,31 @@ const ProductDetail = () => {
                 )}
               </div>
 
+              {hasColorVariants && (
+                <div>
+                  <h3 className="text-sm font-medium text-foreground mb-3">Color</h3>
+                  <div className="flex gap-2 flex-wrap">
+                    {product.colorVariants!.map((colorVariant, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setSelectedColorVariant(index);
+                          setSelectedImage(0);
+                        }}
+                        className={`px-4 py-2 rounded-lg border-2 font-medium transition-all ${
+                          selectedColorVariant === index
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background text-foreground hover:border-primary"
+                        }`}
+                        data-testid={`button-color-${index}`}
+                      >
+                        {colorVariant.color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {product.variants.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-foreground mb-3">Size</h3>
@@ -617,8 +642,8 @@ const ProductDetail = () => {
                         }}
                         disabled={variant.stock === 0}
                         className={`min-w-[48px] h-10 px-3 text-sm font-medium rounded border transition-all ${
-                          selectedVariant === index 
-                            ? "border-primary bg-primary text-primary-foreground" 
+                          selectedVariant === index
+                            ? "border-primary bg-primary text-primary-foreground"
                             : variant.stock === 0
                               ? "border-border bg-muted text-muted-foreground cursor-not-allowed line-through"
                               : "border-border bg-background text-foreground hover:border-primary"
