@@ -301,6 +301,9 @@ const ProductsPage = () => {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
+              <DialogDescription>
+                {editingProduct ? "Update product details and images" : "Add a new product to your catalog with images and pricing"}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -473,9 +476,10 @@ const ProductsPage = () => {
                       <div key={index} className="relative group">
                         <div className="w-24 h-24 rounded-lg border-2 border-border bg-muted flex items-center justify-center overflow-hidden relative">
                           <img
-                            src={url.trim()}
+                            src={url.trim().startsWith('data:') ? imagePreviews[Object.keys(imagePreviews).find(key => imagePreviews[key]?.startsWith('data:')) || ''] || url.trim() : url.trim()}
                             alt={`Product ${index + 1}`}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                             onError={(e) => {
                               const img = e.currentTarget;
                               img.style.display = 'none';
@@ -484,7 +488,7 @@ const ProductsPage = () => {
                                 const errorEl = document.createElement('div');
                                 errorEl.setAttribute('data-error', 'true');
                                 errorEl.className = 'text-xs text-center text-muted-foreground absolute inset-0 flex flex-col items-center justify-center px-1 bg-red-50 dark:bg-red-950/20';
-                                errorEl.textContent = '⚠️ Load Failed';
+                                errorEl.textContent = url.trim().startsWith('data:') ? '📸 Preview' : '⚠️ Load Failed';
                                 parent.appendChild(errorEl);
                               }
                             }}
@@ -494,8 +498,16 @@ const ProductsPage = () => {
                           type="button"
                           onClick={() => {
                             const urls = formData.images.split(',').filter(u => u.trim());
+                            const removedUrl = urls[index];
                             urls.splice(index, 1);
                             setFormData({ ...formData, images: urls.join(', ') });
+                            // Clean up preview if it exists
+                            const previewKeys = Object.keys(imagePreviews).filter(key => imagePreviews[key] === removedUrl);
+                            if (previewKeys.length > 0) {
+                              const newPreviews = { ...imagePreviews };
+                              previewKeys.forEach(key => delete newPreviews[key]);
+                              setImagePreviews(newPreviews);
+                            }
                           }}
                           className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                           data-testid={`button-remove-image-${index}`}
