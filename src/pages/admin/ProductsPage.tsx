@@ -98,6 +98,14 @@ const ProductsPage = () => {
     XXL: 0
   });
 
+  const [colorVariants, setColorVariants] = useState<Array<{
+    color: string;
+    images: string[];
+  }>>([]);
+  const [showColorVariantsForm, setShowColorVariantsForm] = useState(false);
+  const [newColorName, setNewColorName] = useState('');
+  const [editingColorIndex, setEditingColorIndex] = useState<number | null>(null);
+
   const generateSlug = (name: string) => {
     return name
       .toLowerCase()
@@ -176,7 +184,8 @@ const ProductsPage = () => {
         stock: parseInt(formData.stock) || 0,
         subcategoryId: formData.subcategoryId || undefined,
         sizeChart,
-        sizeInventory: hasSizeInventory ? sizeInventory : undefined
+        sizeInventory: hasSizeInventory ? sizeInventory : undefined,
+        colorVariants: colorVariants.length > 0 ? colorVariants : undefined
       };
 
       if (editingProduct) {
@@ -227,6 +236,10 @@ const ProductsPage = () => {
     setSizeChartFieldNames([]);
     setSizeChartRows([]);
     setShowSizeChartForm(false);
+    setColorVariants([]);
+    setShowColorVariantsForm(false);
+    setNewColorName('');
+    setEditingColorIndex(null);
     setEditingProduct(null);
   };
 
