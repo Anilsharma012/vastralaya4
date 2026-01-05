@@ -84,7 +84,6 @@ const ProductsPage = () => {
   const [sizeChartFieldNames, setSizeChartFieldNames] = useState<string[]>([]);
   const [sizeChartRows, setSizeChartRows] = useState<any[]>([]);
   const [showSizeChartForm, setShowSizeChartForm] = useState(false);
-  const [imagePreviews, setImagePreviews] = useState<{ [key: string]: string }>({});
 
   const [sizeInventory, setSizeInventory] = useState({
     S: 0,
@@ -224,7 +223,6 @@ const ProductsPage = () => {
     setSizeChartRows([]);
     setShowSizeChartForm(false);
     setEditingProduct(null);
-    setImagePreviews({});
   };
 
   const openEditDialog = async (product: Product) => {
@@ -389,94 +387,31 @@ const ProductsPage = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/*';
-                        input.multiple = true;
-                        input.onchange = (e: any) => {
-                          const files = Array.from(e.target.files as FileList);
-                          const maxFileSize = 5 * 1024 * 1024; // 5MB per file
-                          const validFiles: File[] = [];
-
-                          // Validate files first
-                          for (const file of files) {
-                            if (file.size > maxFileSize) {
-                              toast({
-                                title: "File too large",
-                                description: `${file.name} is larger than 5MB. Please compress and try again.`,
-                                variant: "destructive"
-                              });
-                              continue;
-                            }
-                            if (!file.type.startsWith('image/')) {
-                              toast({
-                                title: "Invalid file type",
-                                description: `${file.name} is not a valid image file.`,
-                                variant: "destructive"
-                              });
-                              continue;
-                            }
-                            validFiles.push(file);
-                          }
-
-                          if (validFiles.length === 0) return;
-
-                          // Create previews and generate URLs
-                          let filesProcessed = 0;
-                          const newPreviews: { [key: string]: string } = { ...imagePreviews };
-                          const newUrls: string[] = [];
-
-                          validFiles.forEach((file, fileIndex) => {
-                            const fileKey = `uploaded_${Date.now()}_${fileIndex}`;
-                            newUrls.push(`data:${file.type};name=${file.name}`);
-
-                            const reader = new FileReader();
-                            reader.onload = (event: any) => {
-                              newPreviews[fileKey] = event.target.result;
-                              filesProcessed++;
-
-                              if (filesProcessed === validFiles.length) {
-                                const currentUrls = formData.images.split(',').filter(u => u.trim());
-                                setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
-                                setImagePreviews(newPreviews);
-                                toast({
-                                  title: "Success",
-                                  description: `${validFiles.length} image(s) uploaded and ready to preview`
-                                });
-                              }
-                            };
-                            reader.onerror = () => {
-                              toast({
-                                title: "Error reading file",
-                                description: `Failed to read ${file.name}`,
-                                variant: "destructive"
-                              });
-                              filesProcessed++;
-                              if (filesProcessed === validFiles.length) {
-                                const currentUrls = formData.images.split(',').filter(u => u.trim());
-                                setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
-                                setImagePreviews(newPreviews);
-                              }
-                            };
-                            reader.readAsDataURL(file);
+                        const url = prompt('Enter image URL:');
+                        if (url && url.trim()) {
+                          const currentUrls = formData.images.split(',').filter(u => u.trim());
+                          currentUrls.push(url.trim());
+                          setFormData({ ...formData, images: currentUrls.join(', ') });
+                          toast({
+                            title: "Image URL added",
+                            description: "Image preview will appear once loaded"
                           });
-                        };
-                        input.click();
+                        }
                       }}
                       className="gap-2"
-                      data-testid="button-upload-images"
+                      data-testid="button-add-image-url"
                     >
-                      <Upload className="h-4 w-4" />
-                      Upload Images
+                      <ImagePlus className="h-4 w-4" />
+                      Add Image URL
                     </Button>
-                    <span className="text-xs text-muted-foreground self-center">Or add image URLs below (recommended)</span>
+                    <span className="text-xs text-muted-foreground self-center">Paste external image URLs</span>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {formData.images.split(',').filter(url => url.trim()).map((url, index) => (
                       <div key={index} className="relative group">
                         <div className="w-24 h-24 rounded-lg border-2 border-border bg-muted flex items-center justify-center overflow-hidden relative">
                           <img
-                            src={url.trim().startsWith('data:') ? imagePreviews[Object.keys(imagePreviews).find(key => imagePreviews[key]?.startsWith('data:')) || ''] || url.trim() : url.trim()}
+                            src={url.trim()}
                             alt={`Product ${index + 1}`}
                             className="w-full h-full object-cover"
                             loading="lazy"
@@ -488,7 +423,7 @@ const ProductsPage = () => {
                                 const errorEl = document.createElement('div');
                                 errorEl.setAttribute('data-error', 'true');
                                 errorEl.className = 'text-xs text-center text-muted-foreground absolute inset-0 flex flex-col items-center justify-center px-1 bg-red-50 dark:bg-red-950/20';
-                                errorEl.textContent = url.trim().startsWith('data:') ? '📸 Preview' : '⚠️ Load Failed';
+                                errorEl.textContent = '⚠️ Load Failed';
                                 parent.appendChild(errorEl);
                               }
                             }}
@@ -498,16 +433,8 @@ const ProductsPage = () => {
                           type="button"
                           onClick={() => {
                             const urls = formData.images.split(',').filter(u => u.trim());
-                            const removedUrl = urls[index];
                             urls.splice(index, 1);
                             setFormData({ ...formData, images: urls.join(', ') });
-                            // Clean up preview if it exists
-                            const previewKeys = Object.keys(imagePreviews).filter(key => imagePreviews[key] === removedUrl);
-                            if (previewKeys.length > 0) {
-                              const newPreviews = { ...imagePreviews };
-                              previewKeys.forEach(key => delete newPreviews[key]);
-                              setImagePreviews(newPreviews);
-                            }
                           }}
                           className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                           data-testid={`button-remove-image-${index}`}
@@ -543,17 +470,24 @@ const ProductsPage = () => {
                       </div>
                     </div>
                   </div>
-                  <Input 
-                    value={formData.images} 
-                    onChange={(e) => setFormData({ ...formData, images: e.target.value })} 
-                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg" 
+                  <Input
+                    value={formData.images}
+                    onChange={(e) => setFormData({ ...formData, images: e.target.value })}
+                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                     className="text-xs"
-                    data-testid="input-product-images" 
+                    data-testid="input-product-images"
                   />
-                  <div className="text-xs text-muted-foreground space-y-1 bg-blue-50 dark:bg-blue-950/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Tip: Use external image URLs for best results</p>
-                    <p>First image will be used as the main product image. Separate multiple URLs with commas.</p>
-                    <p className="text-[11px]">Example: https://example.com/image1.jpg, https://example.com/image2.jpg</p>
+                  <div className="text-xs text-muted-foreground space-y-2 bg-blue-50 dark:bg-blue-950/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Image URL Instructions:</p>
+                    <div className="space-y-1 ml-2">
+                      <p>✓ <strong>Use external image URLs</strong> (recommended for best performance)</p>
+                      <p>✓ <strong>Click "Add Image URL"</strong> to add URLs one by one, or paste below</p>
+                      <p>✓ <strong>Format:</strong> Separate multiple URLs with commas</p>
+                      <p className="text-[11px] italic">Example: https://example.com/image1.jpg, https://example.com/image2.jpg</p>
+                    </div>
+                    {formData.images.split(',').filter(u => u.trim()).length > 0 && (
+                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {formData.images.split(',').filter(u => u.trim()).length} image URL(s) added</p>
+                    )}
                   </div>
                 </div>
 

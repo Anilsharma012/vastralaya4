@@ -1551,4 +1551,5 @@ router.delete('/products/bulk-delete', async (req: AuthRequest, res: Response) =
   }
 });
 
+
 export default router;
