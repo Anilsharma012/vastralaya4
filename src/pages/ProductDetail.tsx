@@ -124,13 +124,21 @@ const ProductDetail = () => {
       try {
         const data = await api.get<{ product: ProductData; relatedProducts: ProductData[]; reviews: ReviewData[] }>(`/public/products/${productId}`);
 
-        setProduct(data.product);
+        const productData = data.product;
+        setProduct(productData);
         setRelatedProducts(data.relatedProducts || []);
         setReviews(data.reviews || []);
 
-        // Reset image selection when product changes
+        // Reset image and color selection when product changes
         setSelectedImage(0);
         setSelectedColorVariant(0);
+
+        console.log('Product loaded:', {
+          name: productData.name,
+          hasColorVariants: productData.colorVariants && productData.colorVariants.length > 0,
+          colorVariantsCount: productData.colorVariants?.length || 0,
+          colorVariants: productData.colorVariants
+        });
       } catch (err: any) {
         console.error('Error fetching product:', err);
         setError(err.response?.data?.message || 'Product not found');
