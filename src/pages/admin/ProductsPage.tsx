@@ -175,6 +175,14 @@ const ProductsPage = () => {
       // Check if any size inventory is set
       const hasSizeInventory = Object.values(sizeInventory).some(val => val > 0);
 
+      // Prepare color variants with proper structure
+      const colorVariantsToSend = colorVariants && colorVariants.length > 0
+        ? colorVariants.map(cv => ({
+            color: cv.color || '',
+            images: Array.isArray(cv.images) ? cv.images : []
+          }))
+        : undefined;
+
       const payload = {
         ...formData,
         slug,
@@ -185,8 +193,13 @@ const ProductsPage = () => {
         subcategoryId: formData.subcategoryId || undefined,
         sizeChart,
         sizeInventory: hasSizeInventory ? sizeInventory : undefined,
-        colorVariants: colorVariants.length > 0 ? colorVariants : undefined
+        colorVariants: colorVariantsToSend
       };
+
+      console.log('Submitting payload with colorVariants:', {
+        colorVariantsCount: colorVariantsToSend?.length || 0,
+        colorVariants: colorVariantsToSend
+      });
 
       if (editingProduct) {
         await api.put(`/admin/products/${editingProduct._id}`, payload);
@@ -195,11 +208,12 @@ const ProductsPage = () => {
         await api.post('/admin/products', payload);
         toast({ title: "Product created successfully" });
       }
-      
+
       setIsDialogOpen(false);
       resetForm();
       loadProducts();
     } catch (error: any) {
+      console.error('Error saving product:', error);
       toast({ title: error.message || "Error saving product", variant: "destructive" });
     }
   };
