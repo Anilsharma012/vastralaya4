@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  UserCheck, 
-  TrendingUp, 
-  DollarSign, 
-  Users, 
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
+import {
+  UserCheck,
+  TrendingUp,
+  DollarSign,
+  Users,
   Link as LinkIcon,
   Instagram,
   Youtube,
@@ -21,17 +23,53 @@ import {
 } from 'lucide-react';
 
 export default function InfluencerPage() {
+  const { toast } = useToast();
   const [isInfluencer, setIsInfluencer] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    username: '',
+    phone: '',
+    bio: '',
+    instagram: '',
+    youtube: ''
+  });
 
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.username || !formData.phone || !formData.bio) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Please fill in all required fields',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await api.post('/user/influencer/apply', {
+        username: formData.username,
+        phone: formData.phone,
+        bio: formData.bio,
+        socialLinks: {
+          instagram: formData.instagram,
+          youtube: formData.youtube
+        }
+      });
+
+      toast({
+        title: 'Application Submitted',
+        description: 'Your influencer application has been submitted for review'
+      });
       setApplicationStatus('pending');
+    } catch (error: any) {
+      toast({
+        title: 'Submission Failed',
+        description: error.message || 'Failed to submit application',
+        variant: 'destructive'
+      });
     } finally {
       setIsSubmitting(false);
     }
