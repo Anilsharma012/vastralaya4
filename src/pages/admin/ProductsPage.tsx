@@ -184,7 +184,8 @@ const ProductsPage = () => {
         stock: parseInt(formData.stock) || 0,
         subcategoryId: formData.subcategoryId || undefined,
         sizeChart,
-        sizeInventory: hasSizeInventory ? sizeInventory : undefined
+        sizeInventory: hasSizeInventory ? sizeInventory : undefined,
+        colorVariants: colorVariants.length > 0 ? colorVariants : undefined
       };
 
       if (editingProduct) {
