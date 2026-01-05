@@ -387,105 +387,24 @@ const ProductsPage = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/*';
-                        input.multiple = true;
-                        input.onchange = async (e: any) => {
-                          const files = Array.from(e.target.files as FileList);
-                          const maxFileSize = 5 * 1024 * 1024; // 5MB per file
-                          const validFiles: File[] = [];
-
-                          // Validate files first
-                          for (const file of files) {
-                            if (file.size > maxFileSize) {
-                              toast({
-                                title: "File too large",
-                                description: `${file.name} is larger than 5MB. Please compress and try again.`,
-                                variant: "destructive"
-                              });
-                              continue;
-                            }
-                            if (!file.type.startsWith('image/')) {
-                              toast({
-                                title: "Invalid file type",
-                                description: `${file.name} is not a valid image file.`,
-                                variant: "destructive"
-                              });
-                              continue;
-                            }
-                            validFiles.push(file);
-                          }
-
-                          if (validFiles.length === 0) return;
-
-                          // Show uploading toast
+                        const url = prompt('Enter image URL:');
+                        if (url && url.trim()) {
+                          const currentUrls = formData.images.split(',').filter(u => u.trim());
+                          currentUrls.push(url.trim());
+                          setFormData({ ...formData, images: currentUrls.join(', ') });
                           toast({
-                            title: "Uploading...",
-                            description: `Uploading ${validFiles.length} image(s)...`
+                            title: "Image URL added",
+                            description: "Image preview will appear once loaded"
                           });
-
-                          // Convert files to base64 and upload
-                          let filesProcessed = 0;
-                          const base64Images: string[] = [];
-
-                          validFiles.forEach((file, fileIndex) => {
-                            const reader = new FileReader();
-                            reader.onload = async (event: any) => {
-                              const base64Data = event.target.result;
-                              base64Images[fileIndex] = base64Data;
-                              filesProcessed++;
-
-                              if (filesProcessed === validFiles.length) {
-                                // Now upload to server
-                                try {
-                                  const response = await api.post('/admin/upload-images', {
-                                    images: base64Images
-                                  });
-
-                                  if (response.success && response.urls && response.urls.length > 0) {
-                                    // Add uploaded URLs to form
-                                    const currentUrls = formData.images.split(',').filter(u => u.trim());
-                                    const allUrls = [...currentUrls, ...response.urls];
-                                    setFormData({ ...formData, images: allUrls.join(', ') });
-
-                                    toast({
-                                      title: "Success!",
-                                      description: `Uploaded ${response.urls.length} image(s) successfully`
-                                    });
-                                  } else {
-                                    throw new Error(response.message || 'Upload failed');
-                                  }
-                                } catch (uploadError: any) {
-                                  console.error('Upload error:', uploadError);
-                                  toast({
-                                    title: "Upload failed",
-                                    description: uploadError.message || 'Failed to upload images to server',
-                                    variant: "destructive"
-                                  });
-                                }
-                              }
-                            };
-                            reader.onerror = () => {
-                              toast({
-                                title: "Error reading file",
-                                description: `Failed to read ${file.name}`,
-                                variant: "destructive"
-                              });
-                              filesProcessed++;
-                            };
-                            reader.readAsDataURL(file);
-                          });
-                        };
-                        input.click();
+                        }
                       }}
                       className="gap-2"
-                      data-testid="button-upload-images"
+                      data-testid="button-add-image-url"
                     >
-                      <Upload className="h-4 w-4" />
-                      Upload Images
+                      <ImagePlus className="h-4 w-4" />
+                      Add Image URL
                     </Button>
-                    <span className="text-xs text-muted-foreground self-center">Uploads and adds images automatically</span>
+                    <span className="text-xs text-muted-foreground self-center">Paste external image URLs</span>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {formData.images.split(',').filter(url => url.trim()).map((url, index) => (
