@@ -864,7 +864,7 @@ const ProductDetail = () => {
               <div className="space-y-6">
                 {!showReviewForm && (
                   <Button
-                    onClick={() => setShowReviewForm(true)}
+                    onClick={handleOpenReviewForm}
                     className="btn-primary"
                     data-testid="button-write-review"
                   >
@@ -875,6 +875,36 @@ const ProductDetail = () => {
                 {showReviewForm && (
                   <div className="bg-secondary/20 border border-border rounded-xl p-6 space-y-4">
                     <h3 className="font-semibold text-foreground">Share your feedback</h3>
+
+                    {fetchingOrders ? (
+                      <div className="text-center py-4 text-muted-foreground">
+                        Loading your orders...
+                      </div>
+                    ) : userOrders.length === 0 ? (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-sm text-blue-800">
+                          Only verified buyers can leave reviews. Please purchase this product first.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Select Order</label>
+                        <select
+                          value={selectedOrderId || ''}
+                          onChange={(e) => setSelectedOrderId(e.target.value)}
+                          disabled={submittingReview}
+                          className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+                          data-testid="select-order-for-review"
+                        >
+                          <option value="">Select an order...</option>
+                          {userOrders.map((order) => (
+                            <option key={order._id} value={order._id}>
+                              Order #{order.orderId} - {new Date(order.createdAt).toLocaleDateString()}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Rating</label>
