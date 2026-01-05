@@ -49,13 +49,13 @@ export default function InfluencerPage() {
 
     try {
       setIsSubmitting(true);
-      await api.post('/user/influencer/apply', {
-        username: formData.username,
+      const response = await api.post('/user/influencer/apply', {
         phone: formData.phone,
+        username: formData.username,
         bio: formData.bio,
         socialLinks: {
-          instagram: formData.instagram,
-          youtube: formData.youtube
+          instagram: formData.instagram || '',
+          youtube: formData.youtube || ''
         }
       });
 
@@ -64,10 +64,19 @@ export default function InfluencerPage() {
         description: 'Your influencer application has been submitted for review'
       });
       setApplicationStatus('pending');
+
+      // Reset form
+      setFormData({
+        username: '',
+        phone: '',
+        bio: '',
+        instagram: '',
+        youtube: ''
+      });
     } catch (error: any) {
       toast({
         title: 'Submission Failed',
-        description: error.message || 'Failed to submit application',
+        description: error.response?.data?.message || error.message || 'Failed to submit application',
         variant: 'destructive'
       });
     } finally {
