@@ -381,7 +381,61 @@ const ProductsPage = () => {
                 </div>
                 <div className="col-span-2 space-y-3">
                   <Label>Product Images</Label>
-                  <div className="flex gap-2 mb-3">
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const files = e.currentTarget.files;
+                          if (!files || files.length === 0) return;
+
+                          let uploadedCount = 0;
+                          for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            try {
+                              const formDataToSend = new FormData();
+                              formDataToSend.append('file', file);
+
+                              const uploadData = await api.post<{ url: string; filename: string; size: number; mimetype: string }>('/admin/upload-image', formDataToSend);
+                              const currentUrls = formData.images.split(',').map(u => u.trim()).filter(Boolean);
+                              currentUrls.push(uploadData.url);
+                              setFormData({ ...formData, images: currentUrls.join(', ') });
+                              uploadedCount++;
+                            } catch (error: any) {
+                              toast({
+                                title: `Failed to upload ${file.name}`,
+                                description: error.message || 'Upload failed',
+                                variant: "destructive"
+                              });
+                            }
+                          }
+                          if (uploadedCount > 0) {
+                            toast({
+                              title: `${uploadedCount} image(s) uploaded successfully`,
+                              description: "Ready to save your product"
+                            });
+                          }
+                        }}
+                        className="hidden"
+                        data-testid="input-file-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          const input = (e.currentTarget.parentElement?.querySelector('input[type="file"]') as HTMLInputElement);
+                          if (input) input.click();
+                        }}
+                        className="gap-2"
+                        data-testid="button-add-image-url"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload Images
+                      </Button>
+                    </label>
                     <Button
                       type="button"
                       variant="outline"
@@ -389,7 +443,7 @@ const ProductsPage = () => {
                       onClick={() => {
                         const url = prompt('Enter image URL:');
                         if (url && url.trim()) {
-                          const currentUrls = formData.images.split(',').filter(u => u.trim());
+                          const currentUrls = formData.images.split(',').map(u => u.trim()).filter(Boolean);
                           currentUrls.push(url.trim());
                           setFormData({ ...formData, images: currentUrls.join(', ') });
                           toast({
@@ -399,12 +453,10 @@ const ProductsPage = () => {
                         }
                       }}
                       className="gap-2"
-                      data-testid="button-add-image-url"
                     >
                       <ImagePlus className="h-4 w-4" />
-                      Add Image URL
+                      Paste URL
                     </Button>
-                    <span className="text-xs text-muted-foreground self-center">Paste external image URLs</span>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {formData.images.split(',').filter(url => url.trim()).map((url, index) => (
@@ -447,28 +499,51 @@ const ProductsPage = () => {
                         )}
                       </div>
                     ))}
-                    <div
-                      className="w-24 h-24 border-2 border-dashed border-muted-foreground rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => {
-                        const url = prompt('Enter image URL:');
-                        if (url && url.trim()) {
-                          const urls = formData.images.split(',').filter(u => u.trim());
-                          urls.push(url.trim());
-                          setFormData({ ...formData, images: urls.join(', ') });
-                          toast({
-                            title: "Image URL added",
-                            description: "Image preview will appear once loaded"
-                          });
-                        }
-                      }}
-                      data-testid="button-add-image"
-                      title="Add image URL"
-                    >
+                    <label className="w-24 h-24 border-2 border-dashed border-muted-foreground rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors group relative">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const files = e.currentTarget.files;
+                          if (!files || files.length === 0) return;
+
+                          let uploadedCount = 0;
+                          for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            try {
+                              const formDataToSend = new FormData();
+                              formDataToSend.append('file', file);
+
+                              const uploadData = await api.post<{ url: string; filename: string; size: number; mimetype: string }>('/admin/upload-image', formDataToSend);
+                              const urls = formData.images.split(',').map(u => u.trim()).filter(Boolean);
+                              urls.push(uploadData.url);
+                              setFormData({ ...formData, images: urls.join(', ') });
+                              uploadedCount++;
+                            } catch (error: any) {
+                              toast({
+                                title: `Failed to upload ${file.name}`,
+                                description: error.message || 'Upload failed',
+                                variant: "destructive"
+                              });
+                            }
+                          }
+                          if (uploadedCount > 0) {
+                            toast({
+                              title: `${uploadedCount} image(s) uploaded successfully`,
+                              description: "Ready to save your product"
+                            });
+                          }
+                        }}
+                        className="hidden"
+                        data-testid="button-add-image"
+                      />
                       <div className="text-center">
-                        <ImagePlus className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
-                        <span className="text-xs text-muted-foreground">Add URL</span>
+                        <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
+                        <span className="text-xs text-muted-foreground">Add Image</span>
                       </div>
-                    </div>
+                      <span className="hidden group-hover:block absolute inset-0 flex items-center justify-center bg-primary/10 rounded-lg font-medium text-sm text-primary">Click to add</span>
+                    </label>
                   </div>
                   <Input
                     value={formData.images}
@@ -478,15 +553,15 @@ const ProductsPage = () => {
                     data-testid="input-product-images"
                   />
                   <div className="text-xs text-muted-foreground space-y-2 bg-blue-50 dark:bg-blue-950/20 p-3 rounded border border-blue-200 dark:border-blue-800">
-                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Image URL Instructions:</p>
+                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Image Upload Instructions:</p>
                     <div className="space-y-1 ml-2">
-                      <p>✓ <strong>Use external image URLs</strong> (recommended for best performance)</p>
-                      <p>✓ <strong>Click "Add Image URL"</strong> to add URLs one by one, or paste below</p>
-                      <p>✓ <strong>Format:</strong> Separate multiple URLs with commas</p>
-                      <p className="text-[11px] italic">Example: https://example.com/image1.jpg, https://example.com/image2.jpg</p>
+                      <p>✓ <strong>Click "Upload Images"</strong> to upload from your device, or click the dashed box</p>
+                      <p>✓ <strong>"Paste URL"</strong> button to add external image URLs</p>
+                      <p>✓ <strong>Multiple files:</strong> Upload multiple images at once</p>
+                      <p>✓ <strong>Remove any image:</strong> Use the X button to remove and reorder images</p>
                     </div>
                     {formData.images.split(',').filter(u => u.trim()).length > 0 && (
-                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {formData.images.split(',').filter(u => u.trim()).length} image URL(s) added</p>
+                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {formData.images.split(',').filter(u => u.trim()).length} image(s) added</p>
                     )}
                   </div>
                 </div>

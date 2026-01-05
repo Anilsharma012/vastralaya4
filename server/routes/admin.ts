@@ -1551,5 +1551,45 @@ router.delete('/products/bulk-delete', async (req: AuthRequest, res: Response) =
   }
 });
 
+// ========== FILE UPLOAD ==========
+// File upload endpoint for product and other admin images
+router.post('/upload-image', (req: AuthRequest, res: Response) => {
+  // Get the upload middleware from app context
+  const app = (req.app as any);
+  if (!app.upload) {
+    return res.status(500).json({ message: 'Upload service not configured' });
+  }
+
+  // Use multer middleware
+  const uploadMiddleware = app.upload.single('file');
+  uploadMiddleware(req, res, (err: any) => {
+    if (err) {
+      if (err.message === 'Only image files are allowed') {
+        return res.status(400).json({ message: 'Only image files are allowed (JPG, PNG, WebP, GIF, SVG)' });
+      }
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'File size exceeds 10MB limit' });
+      }
+      return res.status(400).json({ message: err.message || 'Upload failed' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file provided' });
+    }
+
+    try {
+      // Return the URL where the file can be accessed
+      const imageUrl = `/uploads/${req.file.filename}`;
+      res.status(200).json({
+        url: imageUrl,
+        filename: req.file.filename,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to process upload' });
+    }
+  });
+});
 
 export default router;
