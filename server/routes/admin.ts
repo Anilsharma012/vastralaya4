@@ -339,7 +339,7 @@ router.get('/products/:id', async (req, res: Response) => {
 
 router.post('/products', async (req: AuthRequest, res: Response) => {
   try {
-    const { name, description, shortDescription, categoryId, subcategoryId, images, price, comparePrice, sku, stock, variants, attributes, tags, sizeChart, sizeInventory, isActive, isFeatured, isNewArrival, isBestSeller } = req.body;
+    const { name, description, shortDescription, categoryId, subcategoryId, images, price, comparePrice, sku, stock, variants, attributes, tags, sizeChart, sizeInventory, colorVariants, isActive, isFeatured, isNewArrival, isBestSeller } = req.body;
 
     if (!name || !categoryId || !price || !sku) {
       return res.status(400).json({ message: 'Name, category, price, and SKU are required' });
