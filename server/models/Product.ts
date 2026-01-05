@@ -46,6 +46,7 @@ export interface IProduct extends Document {
   sku: string;
   stock: number;
   variants: IProductVariant[];
+  colorVariants?: IColorVariant[];
   sizeInventory?: ISizeInventory;
   attributes: Record<string, string>;
   tags: string[];
