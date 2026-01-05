@@ -618,13 +618,13 @@ const ProductDetail = () => {
                 )}
               </div>
 
-              {hasColorVariants && (
+              {hasColorVariants && product.colorVariants && product.colorVariants.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-foreground mb-3">Color</h3>
                   <div className="flex gap-2 flex-wrap">
-                    {product.colorVariants!.map((colorVariant, index) => (
+                    {product.colorVariants.map((colorVariant, index) => (
                       <button
-                        key={index}
+                        key={`color-${index}`}
                         onClick={() => {
                           setSelectedColorVariant(index);
                           setSelectedImage(0);
@@ -636,7 +636,7 @@ const ProductDetail = () => {
                         }`}
                         data-testid={`button-color-${index}`}
                       >
-                        {colorVariant.color}
+                        {colorVariant.color || `Color ${index + 1}`}
                       </button>
                     ))}
                   </div>
