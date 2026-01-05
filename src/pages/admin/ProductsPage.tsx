@@ -423,29 +423,28 @@ const ProductsPage = () => {
 
                           if (validFiles.length === 0) return;
 
-                          // Process files and create previews
+                          // Process files and create local previews only
                           let filesProcessed = 0;
-                          const newPreviews: { [key: string]: string } = { ...imagePreviews };
-                          const newUrls: string[] = [];
+                          const newPreviews = new Map(imagePreviews);
+                          const newFiles = { ...uploadedFiles };
                           const currentImageCount = formData.images.split(',').filter(u => u.trim()).length;
 
                           validFiles.forEach((file, fileIndex) => {
-                            const fileKey = `uploaded_${currentImageCount + fileIndex}`;
+                            const imageIndex = currentImageCount + fileIndex;
 
                             const reader = new FileReader();
                             reader.onload = (event: any) => {
                               const base64Data = event.target.result;
-                              newPreviews[fileKey] = base64Data;
-                              newUrls[fileIndex] = base64Data;
+                              newPreviews.set(imageIndex, base64Data);
+                              newFiles[imageIndex] = file;
                               filesProcessed++;
 
                               if (filesProcessed === validFiles.length) {
-                                const currentUrls = formData.images.split(',').filter(u => u.trim());
-                                setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
                                 setImagePreviews(newPreviews);
+                                setUploadedFiles(newFiles);
                                 toast({
                                   title: "Success",
-                                  description: `${validFiles.length} image(s) selected and ready to preview`
+                                  description: `${validFiles.length} image(s) ready for preview. Add image URLs below to save.`
                                 });
                               }
                             };
@@ -457,9 +456,8 @@ const ProductsPage = () => {
                               });
                               filesProcessed++;
                               if (filesProcessed === validFiles.length) {
-                                const currentUrls = formData.images.split(',').filter(u => u.trim());
-                                setFormData({ ...formData, images: [...currentUrls, ...newUrls.filter(Boolean)].join(', ') });
                                 setImagePreviews(newPreviews);
+                                setUploadedFiles(newFiles);
                               }
                             };
                             reader.readAsDataURL(file);
