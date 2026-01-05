@@ -255,8 +255,6 @@ const ProductsPage = () => {
     setNewColorName('');
     setEditingColorIndex(null);
     setEditingProduct(null);
-    // Reset states when dialog closes
-    setShowColorVariantsForm(false);
   };
 
   const openEditDialog = async (product: Product) => {
