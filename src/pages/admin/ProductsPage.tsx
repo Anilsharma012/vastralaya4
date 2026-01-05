@@ -572,8 +572,8 @@ const ProductsPage = () => {
                       <p>✓ <strong>Format for URLs:</strong> Separate multiple URLs with commas</p>
                       <p className="text-[11px] italic">Example: https://example.com/image1.jpg, https://example.com/image2.jpg</p>
                     </div>
-                    {imagePreviews.size > 0 && (
-                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {imagePreviews.size} image(s) ready to save</p>
+                    {formData.images.split(',').filter(u => u.trim()).length > 0 && (
+                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {formData.images.split(',').filter(u => u.trim()).length} image(s) added</p>
                     )}
                   </div>
                 </div>
