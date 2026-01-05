@@ -421,19 +421,20 @@ const ProductsPage = () => {
 
                           if (validFiles.length === 0) return;
 
-                          // Create previews and generate URLs
+                          // Process files and create previews
                           let filesProcessed = 0;
                           const newPreviews: { [key: string]: string } = { ...imagePreviews };
                           const newUrls: string[] = [];
+                          const currentImageCount = formData.images.split(',').filter(u => u.trim()).length;
 
                           validFiles.forEach((file, fileIndex) => {
-                            const currentImageCount = formData.images.split(',').filter(u => u.trim()).length;
                             const fileKey = `uploaded_${currentImageCount + fileIndex}`;
-                            newUrls.push(`data:${file.type};name=${file.name}`);
 
                             const reader = new FileReader();
                             reader.onload = (event: any) => {
-                              newPreviews[fileKey] = event.target.result;
+                              const base64Data = event.target.result;
+                              newPreviews[fileKey] = base64Data;
+                              newUrls[fileIndex] = base64Data;
                               filesProcessed++;
 
                               if (filesProcessed === validFiles.length) {
@@ -442,7 +443,7 @@ const ProductsPage = () => {
                                 setImagePreviews(newPreviews);
                                 toast({
                                   title: "Success",
-                                  description: `${validFiles.length} image(s) uploaded and ready to preview`
+                                  description: `${validFiles.length} image(s) selected and ready to preview`
                                 });
                               }
                             };
@@ -455,7 +456,7 @@ const ProductsPage = () => {
                               filesProcessed++;
                               if (filesProcessed === validFiles.length) {
                                 const currentUrls = formData.images.split(',').filter(u => u.trim());
-                                setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
+                                setFormData({ ...formData, images: [...currentUrls, ...newUrls.filter(Boolean)].join(', ') });
                                 setImagePreviews(newPreviews);
                               }
                             };
