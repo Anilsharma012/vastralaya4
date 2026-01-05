@@ -479,28 +479,52 @@ const ProductsPage = () => {
                         )}
                       </div>
                     ))}
-                    <div
-                      className="w-24 h-24 border-2 border-dashed border-muted-foreground rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => {
-                        const url = prompt('Enter image URL:');
-                        if (url && url.trim()) {
-                          const urls = formData.images.split(',').filter(u => u.trim());
-                          urls.push(url.trim());
-                          setFormData({ ...formData, images: urls.join(', ') });
-                          toast({
-                            title: "Image URL added",
-                            description: "Image preview will appear once loaded"
-                          });
-                        }
-                      }}
-                      data-testid="button-add-image"
-                      title="Add image URL"
-                    >
+                    <label className="w-24 h-24 border-2 border-dashed border-muted-foreground rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors group relative">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const files = e.currentTarget.files;
+                          if (files) {
+                            const newUrls: string[] = [];
+                            for (let i = 0; i < files.length; i++) {
+                              const file = files[i];
+                              try {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const result = event.target?.result as string;
+                                  newUrls.push(result);
+                                  if (newUrls.length === files.length) {
+                                    const urls = formData.images.split(',').filter(u => u.trim());
+                                    urls.push(...newUrls);
+                                    setFormData({ ...formData, images: urls.join(', ') });
+                                    toast({
+                                      title: `${newUrls.length} image(s) added`,
+                                      description: "Images are ready to save"
+                                    });
+                                    e.currentTarget.value = '';
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              } catch (error) {
+                                toast({
+                                  title: `Failed to process ${file.name}`,
+                                  variant: "destructive"
+                                });
+                              }
+                            }
+                          }
+                        }}
+                        className="hidden"
+                        data-testid="button-add-image"
+                      />
                       <div className="text-center">
-                        <ImagePlus className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
-                        <span className="text-xs text-muted-foreground">Add URL</span>
+                        <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
+                        <span className="text-xs text-muted-foreground">Add Image</span>
                       </div>
-                    </div>
+                      <span className="hidden group-hover:block absolute inset-0 flex items-center justify-center bg-primary/10 rounded-lg font-medium text-sm text-primary">Click to add</span>
+                    </label>
                   </div>
                   <Input
                     value={formData.images}
