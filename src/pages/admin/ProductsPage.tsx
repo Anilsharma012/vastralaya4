@@ -740,6 +740,181 @@ const ProductsPage = () => {
                   </div>
                 )}
 
+                <div className="col-span-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowColorVariantsForm(!showColorVariantsForm)}
+                    className="w-full gap-2"
+                  >
+                    <Settings2 className="h-4 w-4" />
+                    {showColorVariantsForm ? 'Hide Color Variants' : 'Add/Edit Color Variants'}
+                  </Button>
+                </div>
+
+                {showColorVariantsForm && (
+                  <div className="col-span-2 border rounded-lg p-4 space-y-4 bg-secondary/30">
+                    <h4 className="font-semibold text-foreground">Color Variants Management</h4>
+                    <p className="text-sm text-muted-foreground">Add multiple color options with images for each color</p>
+
+                    {colorVariants.length === 0 ? (
+                      <div className="text-center py-6 border-2 border-dashed rounded-lg bg-background/50">
+                        <p className="text-muted-foreground mb-3">No colors added yet</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowColorVariantsForm(true)}
+                        >
+                          Add First Color
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {colorVariants.map((colorVariant, colorIdx) => (
+                          <div key={colorIdx} className="border rounded-lg p-4 bg-background space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h5 className="font-semibold text-foreground">{colorVariant.color}</h5>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updatedColors = colorVariants.filter((_, i) => i !== colorIdx);
+                                  setColorVariants(updatedColors);
+                                }}
+                                className="text-destructive hover:text-destructive/80"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-sm">Images for {colorVariant.color}</Label>
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                      const files = e.currentTarget.files;
+                                      if (!files || files.length === 0) return;
+
+                                      let uploadedCount = 0;
+                                      for (let i = 0; i < files.length; i++) {
+                                        const file = files[i];
+                                        try {
+                                          const formDataToSend = new FormData();
+                                          formDataToSend.append('file', file);
+
+                                          const uploadData = await api.post<{ url: string; filename: string; size: number; mimetype: string }>('/admin/upload-image', formDataToSend);
+                                          const updatedColors = [...colorVariants];
+                                          updatedColors[colorIdx].images.push(uploadData.url);
+                                          setColorVariants(updatedColors);
+                                          uploadedCount++;
+                                        } catch (error: any) {
+                                          toast({
+                                            title: `Failed to upload ${file.name}`,
+                                            description: error.message || 'Upload failed',
+                                            variant: "destructive"
+                                          });
+                                        }
+                                      }
+                                      if (uploadedCount > 0) {
+                                        toast({
+                                          title: `${uploadedCount} image(s) uploaded`,
+                                          description: `Images added to ${colorVariant.color}`
+                                        });
+                                      }
+                                    }}
+                                    className="hidden"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      const input = (e.currentTarget.parentElement?.querySelector('input[type="file"]') as HTMLInputElement);
+                                      if (input) input.click();
+                                    }}
+                                    className="gap-2"
+                                  >
+                                    <Upload className="h-4 w-4" />
+                                    Add Images
+                                  </Button>
+                                </label>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                {colorVariant.images.map((imgUrl, imgIdx) => (
+                                  <div key={imgIdx} className="relative group">
+                                    <div className="w-20 h-20 rounded-lg border-2 border-border bg-muted flex items-center justify-center overflow-hidden">
+                                      <img
+                                        src={imgUrl}
+                                        alt={`${colorVariant.color} ${imgIdx + 1}`}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                      />
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const updatedColors = [...colorVariants];
+                                        updatedColors[colorIdx].images.splice(imgIdx, 1);
+                                        setColorVariants(updatedColors);
+                                      }}
+                                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                              {colorVariant.images.length === 0 && (
+                                <p className="text-xs text-muted-foreground">No images uploaded for this color</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="border-t pt-4 space-y-3">
+                      <h5 className="font-semibold text-foreground">Add New Color</h5>
+                      <div className="flex gap-2">
+                        <Input
+                          type="text"
+                          placeholder="Enter color name (e.g., Red, Black, Blue)"
+                          value={newColorName}
+                          onChange={(e) => setNewColorName(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newColorName.trim()) {
+                                setColorVariants([...colorVariants, { color: newColorName.trim(), images: [] }]);
+                                setNewColorName('');
+                              }
+                            }
+                          }}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            if (newColorName.trim()) {
+                              setColorVariants([...colorVariants, { color: newColorName.trim(), images: [] }]);
+                              setNewColorName('');
+                            }
+                          }}
+                          className="gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Color
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="col-span-2 grid grid-cols-2 gap-4">
                   <div className="flex items-center justify-between">
                     <Label>Active</Label>
