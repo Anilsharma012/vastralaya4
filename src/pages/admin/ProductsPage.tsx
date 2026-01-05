@@ -390,32 +390,47 @@ const ProductsPage = () => {
                         onChange={async (e) => {
                           const files = e.currentTarget.files;
                           if (files) {
-                            const newUrls: string[] = [];
                             for (let i = 0; i < files.length; i++) {
                               const file = files[i];
                               try {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  const result = event.target?.result as string;
-                                  newUrls.push(result);
-                                  if (newUrls.length === files.length) {
-                                    const currentUrls = formData.images.split(',').filter(u => u.trim());
-                                    setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
-                                    toast({
-                                      title: `${newUrls.length} image(s) added`,
-                                      description: "Images are ready to save"
-                                    });
-                                    e.currentTarget.value = '';
+                                const formDataToSend = new FormData();
+                                formDataToSend.append('file', file);
+
+                                const uploadResponse = await fetch('/api/admin/upload-image', {
+                                  method: 'POST',
+                                  body: formDataToSend,
+                                  headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                                   }
-                                };
-                                reader.readAsDataURL(file);
-                              } catch (error) {
+                                });
+
+                                if (!uploadResponse.ok) {
+                                  const error = await uploadResponse.json();
+                                  toast({
+                                    title: `Failed to upload ${file.name}`,
+                                    description: error.message || 'Upload failed',
+                                    variant: "destructive"
+                                  });
+                                  continue;
+                                }
+
+                                const uploadData = await uploadResponse.json();
+                                const currentUrls = formData.images.split(',').filter(u => u.trim());
+                                currentUrls.push(uploadData.url);
+                                setFormData({ ...formData, images: currentUrls.join(', ') });
+                              } catch (error: any) {
                                 toast({
-                                  title: `Failed to process ${file.name}`,
+                                  title: `Failed to upload ${file.name}`,
+                                  description: error.message || 'Network error',
                                   variant: "destructive"
                                 });
                               }
                             }
+                            toast({
+                              title: `Image(s) uploaded successfully`,
+                              description: "Ready to save your product"
+                            });
+                            e.currentTarget.value = '';
                           }
                         }}
                         className="hidden"
