@@ -71,10 +71,15 @@ const InfluencerDashboard = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem('influencer');
-    if (!stored) {
+    const token = localStorage.getItem('influencer_token');
+
+    if (!stored || !token) {
       navigate('/influencer/login');
       return;
     }
+
+    // Restore token to API client
+    api.setToken(token);
     setInfluencer(JSON.parse(stored));
     loadData();
   }, [navigate]);
@@ -104,6 +109,8 @@ const InfluencerDashboard = () => {
       await api.post('/influencer/logout', {});
     } catch (error) {}
     localStorage.removeItem('influencer');
+    localStorage.removeItem('influencer_token');
+    api.clearToken();
     navigate('/influencer/login');
   };
 

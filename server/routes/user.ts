@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import mongoose from 'mongoose';
-import { Order, Ticket, Wallet, Transaction, Address, Wishlist, Cart, Review, Influencer, Referral, Product } from '../models';
+import { User, Order, Ticket, Wallet, Transaction, Address, Wishlist, Cart, Review, Influencer, Referral, Product } from '../models';
 import { verifyToken, AuthRequest } from '../middleware/auth';
 
 const router = Router();
@@ -519,11 +519,17 @@ router.post('/influencer/apply', async (req: AuthRequest, res: Response) => {
   try {
     const existing = await Influencer.findOne({ userId: req.userId });
     if (existing) return res.status(400).json({ message: 'Application already exists' });
-    
-    const { name, email, phone, username, bio, socialLinks } = req.body;
-    
-    if (!name || !email || !phone || !username) {
-      return res.status(400).json({ message: 'Name, email, phone, and username are required' });
+
+    // Fetch user's name and email from their profile
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const { phone, username, bio, socialLinks } = req.body;
+    const name = user.name;
+    const email = user.email;
+
+    if (!phone || !username) {
+      return res.status(400).json({ message: 'Phone and username are required' });
     }
     
     const existingUsername = await Influencer.findOne({ username: username.toLowerCase() });
@@ -601,12 +607,75 @@ router.put('/influencer/bank', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Get user's referral information for dashboard
+router.get('/referral-info', async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Generate or get referral code for regular users
+    let referralCode = user.referralCode;
+    if (!referralCode) {
+      referralCode = 'SHRIBALAJI' + user._id.toString().slice(-6).toUpperCase();
+      user.referralCode = referralCode;
+      await user.save();
+    }
+
+    const referralLink = `https://shribalaji.com?ref=${referralCode}`;
+
+    // Get referral stats
+    const totalReferrals = await Referral.countDocuments({ referrerId: user._id });
+    const successfulReferrals = await Referral.countDocuments({ referrerId: user._id, status: 'converted' });
+
+    // Calculate rewards (assuming ₹100 per successful referral for now)
+    const totalRewards = successfulReferrals * 100;
+    const pendingReferrals = await Referral.countDocuments({ referrerId: user._id, status: 'pending' });
+    const pendingRewards = pendingReferrals * 100;
+
+    res.json({
+      code: referralCode,
+      link: referralLink,
+      stats: {
+        totalReferrals,
+        successfulReferrals,
+        totalRewards,
+        pendingRewards
+      }
+    });
+  } catch (error) {
+    console.error('Failed to get referral info:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user's referral history
+router.get('/referral-history', async (req: AuthRequest, res: Response) => {
+  try {
+    const referrals = await Referral.find({ referrerId: req.userId })
+      .populate('referredUserId', 'name email')
+      .sort({ createdAt: -1 });
+
+    const formattedReferrals = referrals.map(ref => ({
+      _id: ref._id,
+      name: (ref.referredUserId as any)?.name || 'Unknown',
+      email: (ref.referredUserId as any)?.email || 'Unknown',
+      status: ref.status,
+      createdAt: ref.createdAt
+    }));
+
+    res.json({ referrals: formattedReferrals });
+  } catch (error) {
+    console.error('Failed to get referral history:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.get('/referrals', async (req: AuthRequest, res: Response) => {
   try {
     const influencer = await Influencer.findOne({ userId: req.userId });
     if (!influencer) return res.status(404).json({ message: 'Not an influencer' });
-    
-    const referrals = await Referral.find({ influencerId: influencer._id }).populate('userId', 'name email').sort({ createdAt: -1 });
+
+    const referrals = await Referral.find({ referrerId: influencer.userId }).populate('referredUserId', 'name email').sort({ createdAt: -1 });
     res.json(referrals);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

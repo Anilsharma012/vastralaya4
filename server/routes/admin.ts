@@ -647,16 +647,29 @@ router.put('/influencers/:id', async (req: AuthRequest, res: Response) => {
   try {
     const influencer = await Influencer.findById(req.params.id);
     if (!influencer) return res.status(404).json({ message: 'Influencer not found' });
-    
+
     const { status, tier, commissionRate, kycVerified } = req.body;
+
+    // Handle top-level fields
     if (status) influencer.status = status;
     if (tier) influencer.tier = tier;
     if (commissionRate !== undefined) influencer.commission.rate = commissionRate;
     if (kycVerified !== undefined) influencer.kyc.isVerified = kycVerified;
-    
+
+    // Handle nested 'commission.rate' field
+    if (req.body['commission.rate'] !== undefined) {
+      influencer.commission.rate = req.body['commission.rate'];
+    }
+
+    // Handle nested 'kyc.isVerified' field
+    if (req.body['kyc.isVerified'] !== undefined) {
+      influencer.kyc.isVerified = req.body['kyc.isVerified'];
+    }
+
     await influencer.save();
     res.json(influencer);
   } catch (error) {
+    console.error('Influencer update error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

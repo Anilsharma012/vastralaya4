@@ -5,6 +5,7 @@ export interface IUser extends Document {
   password: string;
   name: string;
   phone?: string;
+  referralCode?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -15,6 +16,7 @@ const UserSchema = new Schema<IUser>({
   password: { type: String, required: true },
   name: { type: String, required: true },
   phone: { type: String },
+  referralCode: { type: String, unique: true, sparse: true },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 

@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  UserCheck, 
-  TrendingUp, 
-  DollarSign, 
-  Users, 
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
+import {
+  UserCheck,
+  TrendingUp,
+  DollarSign,
+  Users,
   Link as LinkIcon,
   Instagram,
   Youtube,
@@ -21,17 +23,62 @@ import {
 } from 'lucide-react';
 
 export default function InfluencerPage() {
+  const { toast } = useToast();
   const [isInfluencer, setIsInfluencer] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    username: '',
+    phone: '',
+    bio: '',
+    instagram: '',
+    youtube: ''
+  });
 
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.username || !formData.phone || !formData.bio) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Please fill in all required fields',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await api.post('/user/influencer/apply', {
+        phone: formData.phone,
+        username: formData.username,
+        bio: formData.bio,
+        socialLinks: {
+          instagram: formData.instagram || '',
+          youtube: formData.youtube || ''
+        }
+      });
+
+      toast({
+        title: 'Application Submitted',
+        description: 'Your influencer application has been submitted for review'
+      });
       setApplicationStatus('pending');
+
+      // Reset form
+      setFormData({
+        username: '',
+        phone: '',
+        bio: '',
+        instagram: '',
+        youtube: ''
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Submission Failed',
+        description: error.response?.data?.message || error.message || 'Failed to submit application',
+        variant: 'destructive'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -88,11 +135,25 @@ export default function InfluencerPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="username">Preferred Username</Label>
-                  <Input id="username" placeholder="@yourname" required data-testid="input-username" />
+                  <Input
+                    id="username"
+                    placeholder="@yourname"
+                    required
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    data-testid="input-username"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" placeholder="+91 9876543210" required data-testid="input-phone" />
+                  <Input
+                    id="phone"
+                    placeholder="+91 9876543210"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    data-testid="input-phone"
+                  />
                 </div>
               </div>
 
@@ -102,6 +163,8 @@ export default function InfluencerPage() {
                   id="bio"
                   placeholder="Tell us about yourself and your audience..."
                   required
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   data-testid="input-bio"
                 />
               </div>
@@ -111,14 +174,28 @@ export default function InfluencerPage() {
                   <Label htmlFor="instagram">Instagram Profile</Label>
                   <div className="relative">
                     <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input id="instagram" placeholder="instagram.com/username" className="pl-10" data-testid="input-instagram" />
+                    <Input
+                      id="instagram"
+                      placeholder="instagram.com/username"
+                      className="pl-10"
+                      value={formData.instagram}
+                      onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                      data-testid="input-instagram"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="youtube">YouTube Channel</Label>
                   <div className="relative">
                     <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input id="youtube" placeholder="youtube.com/@channel" className="pl-10" data-testid="input-youtube" />
+                    <Input
+                      id="youtube"
+                      placeholder="youtube.com/@channel"
+                      className="pl-10"
+                      value={formData.youtube}
+                      onChange={(e) => setFormData({ ...formData, youtube: e.target.value })}
+                      data-testid="input-youtube"
+                    />
                   </div>
                 </div>
               </div>
