@@ -773,21 +773,14 @@ const ProductsPage = () => {
                     <h4 className="font-semibold text-foreground">Color Variants Management</h4>
                     <p className="text-sm text-muted-foreground">Add multiple color options with images for each color</p>
 
-                    {colorVariants.length === 0 ? (
+                    {!colorVariants || colorVariants.length === 0 ? (
                       <div className="text-center py-6 border-2 border-dashed rounded-lg bg-background/50">
                         <p className="text-muted-foreground mb-3">No colors added yet</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowColorVariantsForm(true)}
-                        >
-                          Add First Color
-                        </Button>
+                        <p className="text-xs text-muted-foreground mb-3">Start by adding a new color below</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {colorVariants.map((colorVariant, colorIdx) => (
+                        {(colorVariants || []).map((colorVariant, colorIdx) => (
                           <div key={colorIdx} className="border rounded-lg p-4 bg-background space-y-3">
                             <div className="flex items-center justify-between">
                               <h5 className="font-semibold text-foreground">{colorVariant.color}</h5>
