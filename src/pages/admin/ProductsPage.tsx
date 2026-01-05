@@ -236,6 +236,10 @@ const ProductsPage = () => {
     setSizeChartFieldNames([]);
     setSizeChartRows([]);
     setShowSizeChartForm(false);
+    setColorVariants([]);
+    setShowColorVariantsForm(false);
+    setNewColorName('');
+    setEditingColorIndex(null);
     setEditingProduct(null);
   };
 
