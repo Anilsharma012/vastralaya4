@@ -3,6 +3,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import multer from 'multer';
 import connectDB from './config/db';
 import { authRoutes, adminRoutes, publicRoutes, userRoutes, influencerRoutes } from './routes';
 
@@ -10,6 +12,12 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../public/uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const allowedOrigins = [
   'http://localhost:5000',
