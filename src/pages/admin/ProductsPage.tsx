@@ -558,17 +558,24 @@ const ProductsPage = () => {
                       </div>
                     </div>
                   </div>
-                  <Input 
-                    value={formData.images} 
-                    onChange={(e) => setFormData({ ...formData, images: e.target.value })} 
-                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg" 
+                  <Input
+                    value={formData.images}
+                    onChange={(e) => setFormData({ ...formData, images: e.target.value })}
+                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                     className="text-xs"
-                    data-testid="input-product-images" 
+                    data-testid="input-product-images"
                   />
-                  <div className="text-xs text-muted-foreground space-y-1 bg-blue-50 dark:bg-blue-950/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Tip: Use external image URLs for best results</p>
-                    <p>First image will be used as the main product image. Separate multiple URLs with commas.</p>
-                    <p className="text-[11px]">Example: https://example.com/image1.jpg, https://example.com/image2.jpg</p>
+                  <div className="text-xs text-muted-foreground space-y-2 bg-blue-50 dark:bg-blue-950/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Image Upload Instructions:</p>
+                    <div className="space-y-1 ml-2">
+                      <p>✓ <strong>Preview locally:</strong> Click "Upload Images" to preview files before saving</p>
+                      <p>✓ <strong>Save with URLs:</strong> Paste external image URLs in the field above (recommended)</p>
+                      <p>✓ <strong>Format:</strong> Separate multiple URLs with commas</p>
+                      <p className="text-[11px] italic">Example: https://example.com/image1.jpg, https://example.com/image2.jpg</p>
+                    </div>
+                    {imagePreviews.size > 0 && (
+                      <p className="text-amber-700 dark:text-amber-200 font-semibold">⚠️ You have {imagePreviews.size} local preview(s). Add external URLs above to save them.</p>
+                    )}
                   </div>
                 </div>
 
