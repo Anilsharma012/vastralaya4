@@ -534,15 +534,15 @@ const ProductsPage = () => {
                     data-testid="input-product-images"
                   />
                   <div className="text-xs text-muted-foreground space-y-2 bg-blue-50 dark:bg-blue-950/20 p-3 rounded border border-blue-200 dark:border-blue-800">
-                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Image URL Instructions:</p>
+                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Upload Image Instructions:</p>
                     <div className="space-y-1 ml-2">
-                      <p>✓ <strong>Use external image URLs</strong> (recommended for best performance)</p>
-                      <p>✓ <strong>Click "Add Image URL"</strong> to add URLs one by one, or paste below</p>
-                      <p>✓ <strong>Format:</strong> Separate multiple URLs with commas</p>
-                      <p className="text-[11px] italic">Example: https://example.com/image1.jpg, https://example.com/image2.jpg</p>
+                      <p>✓ <strong>Click "Upload Images"</strong> or click the dashed box to select images from your device</p>
+                      <p>✓ <strong>Multiple images:</strong> Select multiple files at once to add them all</p>
+                      <p>✓ <strong>Supported formats:</strong> JPG, PNG, WebP, GIF, and other image formats</p>
+                      <p>✓ <strong>Reorder:</strong> Remove any image using the X button and re-upload in desired order</p>
                     </div>
                     {formData.images.split(',').filter(u => u.trim()).length > 0 && (
-                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {formData.images.split(',').filter(u => u.trim()).length} image URL(s) added</p>
+                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {formData.images.split(',').filter(u => u.trim()).length} image(s) added</p>
                     )}
                   </div>
                 </div>
