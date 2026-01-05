@@ -292,10 +292,11 @@ const ProductsPage = () => {
       }
 
       // Load color variants if available
-      if (fullProduct.colorVariants && fullProduct.colorVariants.length > 0) {
-        setColorVariants(fullProduct.colorVariants.map(cv => ({
-          color: cv.color,
-          images: cv.images || []
+      const colorVariantsData = (fullProduct as any).colorVariants;
+      if (colorVariantsData && Array.isArray(colorVariantsData) && colorVariantsData.length > 0) {
+        setColorVariants(colorVariantsData.map((cv: any) => ({
+          color: cv.color || '',
+          images: Array.isArray(cv.images) ? cv.images : []
         })));
         setShowColorVariantsForm(true);
       } else {
@@ -304,7 +305,8 @@ const ProductsPage = () => {
       }
 
       setIsDialogOpen(true);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error loading product:', error);
       toast({ title: "Error loading product details", variant: "destructive" });
     }
   };
