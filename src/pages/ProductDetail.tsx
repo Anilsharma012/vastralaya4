@@ -99,6 +99,9 @@ const ProductDetail = () => {
   });
   const [reviewImages, setReviewImages] = useState<File[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [userOrders, setUserOrders] = useState<any[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [fetchingOrders, setFetchingOrders] = useState(false);
 
   // Size chart modal state
   const [showSizeChartModal, setShowSizeChartModal] = useState(false);
@@ -292,6 +295,43 @@ const ProductDetail = () => {
     }));
   };
 
+  const fetchUserOrders = async () => {
+    setFetchingOrders(true);
+    try {
+      const response = await api.get<{ orders: any[] }>('/user/orders?limit=100');
+      const ordersWithProduct = response.orders?.filter((order: any) => {
+        return order.items?.some((item: any) => item.productId?.toString() === product?._id?.toString());
+      }) || [];
+      setUserOrders(ordersWithProduct);
+      if (ordersWithProduct.length > 0) {
+        setSelectedOrderId(ordersWithProduct[0]._id);
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      toast({
+        title: 'Failed to load orders',
+        description: 'Please try again',
+        variant: 'destructive'
+      });
+    } finally {
+      setFetchingOrders(false);
+    }
+  };
+
+  const handleOpenReviewForm = () => {
+    if (!user) {
+      toast({
+        title: "Please Login",
+        description: "You need to login to submit a review",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
+    setShowReviewForm(true);
+    fetchUserOrders();
+  };
+
   const handleSubmitReview = async () => {
     if (!product) return;
 
@@ -302,6 +342,15 @@ const ProductDetail = () => {
         variant: "destructive"
       });
       navigate('/login');
+      return;
+    }
+
+    if (!selectedOrderId) {
+      toast({
+        title: "Select an Order",
+        description: "Please select the order from which you purchased this product",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -317,6 +366,7 @@ const ProductDetail = () => {
     try {
       await api.post('/user/reviews', {
         productId: product._id,
+        orderId: selectedOrderId,
         rating: reviewFormData.rating,
         title: reviewFormData.title,
         comment: reviewFormData.comment,
@@ -814,7 +864,7 @@ const ProductDetail = () => {
               <div className="space-y-6">
                 {!showReviewForm && (
                   <Button
-                    onClick={() => setShowReviewForm(true)}
+                    onClick={handleOpenReviewForm}
                     className="btn-primary"
                     data-testid="button-write-review"
                   >
@@ -826,6 +876,36 @@ const ProductDetail = () => {
                   <div className="bg-secondary/20 border border-border rounded-xl p-6 space-y-4">
                     <h3 className="font-semibold text-foreground">Share your feedback</h3>
 
+                    {fetchingOrders ? (
+                      <div className="text-center py-4 text-muted-foreground">
+                        Loading your orders...
+                      </div>
+                    ) : userOrders.length === 0 ? (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-sm text-blue-800">
+                          Only verified buyers can leave reviews. Please purchase this product first.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Select Order</label>
+                        <select
+                          value={selectedOrderId || ''}
+                          onChange={(e) => setSelectedOrderId(e.target.value)}
+                          disabled={submittingReview}
+                          className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+                          data-testid="select-order-for-review"
+                        >
+                          <option value="">Select an order...</option>
+                          {userOrders.map((order) => (
+                            <option key={order._id} value={order._id}>
+                              Order #{order.orderId} - {new Date(order.createdAt).toLocaleDateString()}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Rating</label>
                       <div className="flex gap-2">
@@ -834,6 +914,7 @@ const ProductDetail = () => {
                             key={star}
                             onClick={() => setReviewFormData({ ...reviewFormData, rating: star })}
                             className="text-3xl transition-colors"
+                            disabled={userOrders.length === 0 || submittingReview}
                             data-testid={`button-star-${star}`}
                           >
                             <span className={star <= reviewFormData.rating ? 'text-yellow-500' : 'text-muted-foreground'}>
@@ -851,7 +932,7 @@ const ProductDetail = () => {
                         placeholder="Summary of your experience"
                         value={reviewFormData.title}
                         onChange={(e) => setReviewFormData({ ...reviewFormData, title: e.target.value })}
-                        disabled={submittingReview}
+                        disabled={submittingReview || userOrders.length === 0}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                         data-testid="input-review-title"
                       />
@@ -863,7 +944,7 @@ const ProductDetail = () => {
                         placeholder="Tell us about your experience with this product..."
                         value={reviewFormData.comment}
                         onChange={(e) => setReviewFormData({ ...reviewFormData, comment: e.target.value })}
-                        disabled={submittingReview}
+                        disabled={submittingReview || userOrders.length === 0}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground resize-none"
                         rows={4}
                         data-testid="textarea-review-comment"
@@ -877,7 +958,7 @@ const ProductDetail = () => {
                         accept="image/*"
                         multiple
                         onChange={handleReviewImageChange}
-                        disabled={submittingReview}
+                        disabled={submittingReview || userOrders.length === 0}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                         data-testid="input-review-images"
                       />
@@ -912,7 +993,7 @@ const ProductDetail = () => {
                       </Button>
                       <Button
                         onClick={handleSubmitReview}
-                        disabled={submittingReview}
+                        disabled={submittingReview || userOrders.length === 0 || !selectedOrderId}
                         className="btn-primary"
                         data-testid="button-submit-review"
                       >

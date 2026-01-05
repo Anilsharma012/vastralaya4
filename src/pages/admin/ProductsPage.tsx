@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -84,6 +84,7 @@ const ProductsPage = () => {
   const [sizeChartFieldNames, setSizeChartFieldNames] = useState<string[]>([]);
   const [sizeChartRows, setSizeChartRows] = useState<any[]>([]);
   const [showSizeChartForm, setShowSizeChartForm] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState<{ [key: string]: string }>({});
 
   const [sizeInventory, setSizeInventory] = useState({
     S: 0,
@@ -223,6 +224,7 @@ const ProductsPage = () => {
     setSizeChartRows([]);
     setShowSizeChartForm(false);
     setEditingProduct(null);
+    setImagePreviews({});
   };
 
   const openEditDialog = async (product: Product) => {
@@ -299,6 +301,9 @@ const ProductsPage = () => {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
+              <DialogDescription>
+                {editingProduct ? "Update product details and images" : "Add a new product to your catalog with images and pricing"}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -390,16 +395,15 @@ const ProductsPage = () => {
                         input.multiple = true;
                         input.onchange = (e: any) => {
                           const files = Array.from(e.target.files as FileList);
-                          const maxFileSize = 2 * 1024 * 1024; // 2MB per file
+                          const maxFileSize = 5 * 1024 * 1024; // 5MB per file
                           const validFiles: File[] = [];
-                          const currentUrls = formData.images.split(',').filter(u => u.trim());
 
                           // Validate files first
                           for (const file of files) {
                             if (file.size > maxFileSize) {
                               toast({
                                 title: "File too large",
-                                description: `${file.name} is larger than 2MB. Please compress and try again.`,
+                                description: `${file.name} is larger than 5MB. Please compress and try again.`,
                                 variant: "destructive"
                               });
                               continue;
@@ -417,20 +421,27 @@ const ProductsPage = () => {
 
                           if (validFiles.length === 0) return;
 
-                          // Read all files and update state once
-                          let filesRead = 0;
-                          const newUrls = [...currentUrls];
+                          // Create previews and generate URLs
+                          let filesProcessed = 0;
+                          const newPreviews: { [key: string]: string } = { ...imagePreviews };
+                          const newUrls: string[] = [];
 
-                          validFiles.forEach((file) => {
+                          validFiles.forEach((file, fileIndex) => {
+                            const fileKey = `uploaded_${Date.now()}_${fileIndex}`;
+                            newUrls.push(`data:${file.type};name=${file.name}`);
+
                             const reader = new FileReader();
                             reader.onload = (event: any) => {
-                              newUrls.push(event.target.result);
-                              filesRead++;
-                              if (filesRead === validFiles.length) {
-                                setFormData({ ...formData, images: newUrls.join(', ') });
+                              newPreviews[fileKey] = event.target.result;
+                              filesProcessed++;
+
+                              if (filesProcessed === validFiles.length) {
+                                const currentUrls = formData.images.split(',').filter(u => u.trim());
+                                setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
+                                setImagePreviews(newPreviews);
                                 toast({
                                   title: "Success",
-                                  description: `${validFiles.length} image(s) uploaded successfully`
+                                  description: `${validFiles.length} image(s) uploaded and ready to preview`
                                 });
                               }
                             };
@@ -440,9 +451,11 @@ const ProductsPage = () => {
                                 description: `Failed to read ${file.name}`,
                                 variant: "destructive"
                               });
-                              filesRead++;
-                              if (filesRead === validFiles.length) {
-                                setFormData({ ...formData, images: newUrls.join(', ') });
+                              filesProcessed++;
+                              if (filesProcessed === validFiles.length) {
+                                const currentUrls = formData.images.split(',').filter(u => u.trim());
+                                setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
+                                setImagePreviews(newPreviews);
                               }
                             };
                             reader.readAsDataURL(file);
@@ -463,9 +476,10 @@ const ProductsPage = () => {
                       <div key={index} className="relative group">
                         <div className="w-24 h-24 rounded-lg border-2 border-border bg-muted flex items-center justify-center overflow-hidden relative">
                           <img
-                            src={url.trim()}
+                            src={url.trim().startsWith('data:') ? imagePreviews[Object.keys(imagePreviews).find(key => imagePreviews[key]?.startsWith('data:')) || ''] || url.trim() : url.trim()}
                             alt={`Product ${index + 1}`}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                             onError={(e) => {
                               const img = e.currentTarget;
                               img.style.display = 'none';
@@ -474,7 +488,7 @@ const ProductsPage = () => {
                                 const errorEl = document.createElement('div');
                                 errorEl.setAttribute('data-error', 'true');
                                 errorEl.className = 'text-xs text-center text-muted-foreground absolute inset-0 flex flex-col items-center justify-center px-1 bg-red-50 dark:bg-red-950/20';
-                                errorEl.textContent = '⚠️ Load Failed';
+                                errorEl.textContent = url.trim().startsWith('data:') ? '📸 Preview' : '⚠️ Load Failed';
                                 parent.appendChild(errorEl);
                               }
                             }}
@@ -484,8 +498,16 @@ const ProductsPage = () => {
                           type="button"
                           onClick={() => {
                             const urls = formData.images.split(',').filter(u => u.trim());
+                            const removedUrl = urls[index];
                             urls.splice(index, 1);
                             setFormData({ ...formData, images: urls.join(', ') });
+                            // Clean up preview if it exists
+                            const previewKeys = Object.keys(imagePreviews).filter(key => imagePreviews[key] === removedUrl);
+                            if (previewKeys.length > 0) {
+                              const newPreviews = { ...imagePreviews };
+                              previewKeys.forEach(key => delete newPreviews[key]);
+                              setImagePreviews(newPreviews);
+                            }
                           }}
                           className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                           data-testid={`button-remove-image-${index}`}

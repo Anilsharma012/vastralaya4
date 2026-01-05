@@ -63,6 +63,9 @@ import TicketsPage from "./pages/dashboard/TicketsPage";
 import PaymentMethodsPage from "./pages/dashboard/PaymentMethodsPage";
 import RewardsPage from "./pages/dashboard/RewardsPage";
 import TransactionsPage from "./pages/dashboard/TransactionsPage";
+import SettingsPage from "./pages/dashboard/SettingsPage";
+import InfluencerStatsPage from "./pages/dashboard/InfluencerStatsPage";
+import CommissionPage from "./pages/dashboard/CommissionPage";
 
 const queryClient = new QueryClient();
 
@@ -107,11 +110,11 @@ const App = () => (
               <Route path="rewards" element={<RewardsPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
               <Route path="influencer" element={<InfluencerPage />} />
-              <Route path="influencer/stats" element={<PlaceholderPage title="Influencer Stats" />} />
-              <Route path="influencer/commission" element={<PlaceholderPage title="Commission" />} />
+              <Route path="influencer/stats" element={<InfluencerStatsPage />} />
+              <Route path="influencer/commission" element={<CommissionPage />} />
               <Route path="tickets" element={<TicketsPage />} />
               <Route path="notifications" element={<PlaceholderPage title="Notifications" />} />
-              <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+              <Route path="settings" element={<SettingsPage />} />
               <Route path="reviews" element={<PlaceholderPage title="My Reviews" />} />
             </Route>
             

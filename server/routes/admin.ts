@@ -651,7 +651,19 @@ router.put('/influencers/:id', async (req: AuthRequest, res: Response) => {
     const { status, tier, commissionRate, kycVerified } = req.body;
 
     // Handle top-level fields
-    if (status) influencer.status = status;
+    if (status) {
+      influencer.status = status;
+      // Auto-update approval dates when status changes to approved
+      if (status === 'approved' && !influencer.approvedAt) {
+        influencer.approvedAt = new Date();
+        influencer.approvedBy = req.userId;
+      }
+      // Auto-update rejection dates when status changes to rejected
+      if (status === 'rejected' && !influencer.rejectedAt) {
+        influencer.rejectedAt = new Date();
+        influencer.rejectedBy = req.userId;
+      }
+    }
     if (tier) influencer.tier = tier;
     if (commissionRate !== undefined) influencer.commission.rate = commissionRate;
     if (kycVerified !== undefined) influencer.kyc.isVerified = kycVerified;
