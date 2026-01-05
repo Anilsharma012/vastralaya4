@@ -490,7 +490,11 @@ const ProductDetail = () => {
     );
   }
 
-  const allImages = product.images?.length > 0 ? product.images : ['/placeholder-product.jpg'];
+  const hasColorVariants = product.colorVariants && product.colorVariants.length > 0;
+  const allImages = hasColorVariants && product.colorVariants[selectedColorVariant]?.images?.length > 0
+    ? product.colorVariants[selectedColorVariant].images
+    : (product.images?.length > 0 ? product.images : ['/placeholder-product.jpg']);
+
   const currentVariant = product.variants[selectedVariant];
   const currentPrice = currentVariant?.price || product.price;
   const currentComparePrice = currentVariant?.comparePrice || product.comparePrice;
