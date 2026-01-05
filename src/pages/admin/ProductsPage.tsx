@@ -395,7 +395,7 @@ const ProductsPage = () => {
                         input.type = 'file';
                         input.accept = 'image/*';
                         input.multiple = true;
-                        input.onchange = (e: any) => {
+                        input.onchange = async (e: any) => {
                           const files = Array.from(e.target.files as FileList);
                           const maxFileSize = 5 * 1024 * 1024; // 5MB per file
                           const validFiles: File[] = [];
@@ -423,29 +423,57 @@ const ProductsPage = () => {
 
                           if (validFiles.length === 0) return;
 
-                          // Process files and create local previews only
+                          // Show uploading toast
+                          toast({
+                            title: "Uploading...",
+                            description: `Uploading ${validFiles.length} image(s)...`
+                          });
+
+                          // Convert files to base64 and upload
                           let filesProcessed = 0;
+                          const base64Images: string[] = [];
                           const newPreviews = new Map(imagePreviews);
-                          const newFiles = { ...uploadedFiles };
-                          const currentImageCount = formData.images.split(',').filter(u => u.trim()).length;
 
                           validFiles.forEach((file, fileIndex) => {
-                            const imageIndex = currentImageCount + fileIndex;
-
                             const reader = new FileReader();
-                            reader.onload = (event: any) => {
+                            reader.onload = async (event: any) => {
                               const base64Data = event.target.result;
+                              base64Images[fileIndex] = base64Data;
+                              const imageIndex = formData.images.split(',').filter(u => u.trim()).length + fileIndex;
                               newPreviews.set(imageIndex, base64Data);
-                              newFiles[imageIndex] = file;
                               filesProcessed++;
 
                               if (filesProcessed === validFiles.length) {
-                                setImagePreviews(newPreviews);
-                                setUploadedFiles(newFiles);
-                                toast({
-                                  title: "Success",
-                                  description: `${validFiles.length} image(s) ready for preview. Add image URLs below to save.`
-                                });
+                                // Now upload to server
+                                try {
+                                  const response = await api.post('/admin/upload-images', {
+                                    images: base64Images
+                                  });
+
+                                  if (response.success && response.urls && response.urls.length > 0) {
+                                    // Add uploaded URLs to form
+                                    const currentUrls = formData.images.split(',').filter(u => u.trim());
+                                    const allUrls = [...currentUrls, ...response.urls];
+                                    setFormData({ ...formData, images: allUrls.join(', ') });
+                                    setImagePreviews(newPreviews);
+
+                                    toast({
+                                      title: "Success!",
+                                      description: `Uploaded ${response.urls.length} image(s) successfully`
+                                    });
+                                  } else {
+                                    throw new Error(response.message || 'Upload failed');
+                                  }
+                                } catch (uploadError: any) {
+                                  console.error('Upload error:', uploadError);
+                                  toast({
+                                    title: "Upload failed",
+                                    description: uploadError.message || 'Failed to upload images to server',
+                                    variant: "destructive"
+                                  });
+                                  // Still show local preview even if upload failed
+                                  setImagePreviews(newPreviews);
+                                }
                               }
                             };
                             reader.onerror = () => {
@@ -455,10 +483,6 @@ const ProductsPage = () => {
                                 variant: "destructive"
                               });
                               filesProcessed++;
-                              if (filesProcessed === validFiles.length) {
-                                setImagePreviews(newPreviews);
-                                setUploadedFiles(newFiles);
-                              }
                             };
                             reader.readAsDataURL(file);
                           });
@@ -471,7 +495,7 @@ const ProductsPage = () => {
                       <Upload className="h-4 w-4" />
                       Upload Images
                     </Button>
-                    <span className="text-xs text-muted-foreground self-center">Or add image URLs below (recommended)</span>
+                    <span className="text-xs text-muted-foreground self-center">Uploads and adds images automatically</span>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {Array.from({ length: Math.max(formData.images.split(',').filter(u => u.trim()).length, imagePreviews.size) }, (_, index) => {
