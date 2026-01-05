@@ -71,10 +71,15 @@ const InfluencerDashboard = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem('influencer');
-    if (!stored) {
+    const token = localStorage.getItem('influencer_token');
+
+    if (!stored || !token) {
       navigate('/influencer/login');
       return;
     }
+
+    // Restore token to API client
+    api.setToken(token);
     setInfluencer(JSON.parse(stored));
     loadData();
   }, [navigate]);
