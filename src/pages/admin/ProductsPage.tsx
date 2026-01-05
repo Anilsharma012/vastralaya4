@@ -289,6 +289,18 @@ const ProductsPage = () => {
         setSizeInventory({ S: 0, M: 0, L: 0, XL: 0, XXL: 0 });
       }
 
+      // Load color variants if available
+      if (fullProduct.colorVariants && fullProduct.colorVariants.length > 0) {
+        setColorVariants(fullProduct.colorVariants.map(cv => ({
+          color: cv.color,
+          images: cv.images || []
+        })));
+        setShowColorVariantsForm(true);
+      } else {
+        setColorVariants([]);
+        setShowColorVariantsForm(false);
+      }
+
       setIsDialogOpen(true);
     } catch (error) {
       toast({ title: "Error loading product details", variant: "destructive" });
