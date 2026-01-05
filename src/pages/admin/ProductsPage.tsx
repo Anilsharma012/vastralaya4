@@ -36,6 +36,11 @@ interface Product {
   comparePrice?: number;
   sku: string;
   stock: number;
+  colorVariants?: Array<{
+    _id: string;
+    color: string;
+    images: string[];
+  }>;
   sizeChart?: {
     fieldNames: string[];
     rows: any[];
