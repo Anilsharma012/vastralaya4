@@ -476,28 +476,42 @@ router.get('/reviews', async (req: AuthRequest, res: Response) => {
 router.post('/reviews', async (req: AuthRequest, res: Response) => {
   try {
     const { productId, orderId, rating, title, comment, images } = req.body;
-    
+
     if (!productId || !rating) {
       return res.status(400).json({ message: 'Product ID and rating are required' });
     }
-    
+
+    if (!orderId) {
+      return res.status(400).json({ message: 'Only verified buyers can leave reviews. Please purchase this product first.' });
+    }
+
+    // Verify that the user owns the order
+    const order = await Order.findById(orderId);
+    if (!order || order.userId.toString() !== req.userId.toString()) {
+      return res.status(403).json({ message: 'Invalid order. You can only review products from your own orders.' });
+    }
+
+    // Verify that the order contains the product
+    const orderHasProduct = order.items.some((item: any) => item.productId.toString() === productId.toString());
+    if (!orderHasProduct) {
+      return res.status(400).json({ message: 'This product is not in your order. You can only review products you have purchased.' });
+    }
+
     const existing = await Review.findOne({ userId: req.userId, productId });
     if (existing) return res.status(400).json({ message: 'You have already reviewed this product' });
-    
-    const isVerifiedPurchase = orderId ? true : false;
-    
+
     const review = new Review({
       productId,
       userId: req.userId,
-      orderId: orderId || undefined,
+      orderId: orderId,
       rating,
       title,
       comment,
       images: images || [],
-      isVerifiedPurchase,
+      isVerifiedPurchase: true,
       isApproved: false
     });
-    
+
     await review.save();
     res.status(201).json(review);
   } catch (error) {
