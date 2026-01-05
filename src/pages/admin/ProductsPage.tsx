@@ -84,6 +84,7 @@ const ProductsPage = () => {
   const [sizeChartFieldNames, setSizeChartFieldNames] = useState<string[]>([]);
   const [sizeChartRows, setSizeChartRows] = useState<any[]>([]);
   const [showSizeChartForm, setShowSizeChartForm] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState<{ [key: string]: string }>({});
 
   const [sizeInventory, setSizeInventory] = useState({
     S: 0,
