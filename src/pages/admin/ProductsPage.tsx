@@ -474,46 +474,67 @@ const ProductsPage = () => {
                     <span className="text-xs text-muted-foreground self-center">Or add image URLs below (recommended)</span>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    {formData.images.split(',').filter(url => url.trim()).map((url, index) => (
-                      <div key={index} className="relative group">
-                        <div className="w-24 h-24 rounded-lg border-2 border-border bg-muted flex items-center justify-center overflow-hidden relative">
-                          <img
-                            src={url.trim()}
-                            alt={`Product ${index + 1}`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                              const img = e.currentTarget;
-                              img.style.display = 'none';
-                              const parent = img.parentElement;
-                              if (parent && !parent.querySelector('[data-error]')) {
-                                const errorEl = document.createElement('div');
-                                errorEl.setAttribute('data-error', 'true');
-                                errorEl.className = 'text-xs text-center text-muted-foreground absolute inset-0 flex flex-col items-center justify-center px-1 bg-red-50 dark:bg-red-950/20';
-                                errorEl.textContent = url.trim().startsWith('data:') ? '📸 Preview' : '⚠️ Load Failed';
-                                parent.appendChild(errorEl);
+                    {Array.from({ length: Math.max(formData.images.split(',').filter(u => u.trim()).length, imagePreviews.size) }, (_, index) => {
+                      const externalUrl = formData.images.split(',').filter(u => u.trim())[index];
+                      const preview = imagePreviews.get(index);
+                      const imageSource = externalUrl || preview;
+
+                      if (!imageSource) return null;
+
+                      return (
+                        <div key={index} className="relative group">
+                          <div className="w-24 h-24 rounded-lg border-2 border-border bg-muted flex items-center justify-center overflow-hidden relative">
+                            <img
+                              src={imageSource}
+                              alt={`Product ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              onError={(e) => {
+                                const img = e.currentTarget;
+                                img.style.display = 'none';
+                                const parent = img.parentElement;
+                                if (parent && !parent.querySelector('[data-error]')) {
+                                  const errorEl = document.createElement('div');
+                                  errorEl.setAttribute('data-error', 'true');
+                                  errorEl.className = 'text-xs text-center text-muted-foreground absolute inset-0 flex flex-col items-center justify-center px-1 bg-red-50 dark:bg-red-950/20';
+                                  errorEl.textContent = preview ? '📸 Preview' : '⚠️ Load Failed';
+                                  parent.appendChild(errorEl);
+                                }
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const urls = formData.images.split(',').filter(u => u.trim());
+                              if (externalUrl) {
+                                urls.splice(index, 1);
+                                setFormData({ ...formData, images: urls.join(', ') });
+                              }
+                              if (preview) {
+                                const newPreviews = new Map(imagePreviews);
+                                newPreviews.delete(index);
+                                setImagePreviews(newPreviews);
+                                const newFiles = { ...uploadedFiles };
+                                delete newFiles[index];
+                                setUploadedFiles(newFiles);
                               }
                             }}
-                          />
+                            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                            data-testid={`button-remove-image-${index}`}
+                            title="Remove image"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                          {index === 0 && (
+                            <span className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground text-[11px] text-center py-1 rounded-b-lg font-semibold">Main</span>
+                          )}
+                          {preview && !externalUrl && (
+                            <span className="absolute top-1 right-1 bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded">Local</span>
+                          )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const urls = formData.images.split(',').filter(u => u.trim());
-                            urls.splice(index, 1);
-                            setFormData({ ...formData, images: urls.join(', ') });
-                          }}
-                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                          data-testid={`button-remove-image-${index}`}
-                          title="Remove image"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                        {index === 0 && (
-                          <span className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground text-[11px] text-center py-1 rounded-b-lg font-semibold">Main</span>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                     <div
                       className="w-24 h-24 border-2 border-dashed border-muted-foreground rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
                       onClick={() => {
