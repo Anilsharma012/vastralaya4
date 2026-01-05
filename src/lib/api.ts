@@ -33,11 +33,14 @@ export const api = {
   },
 
   async post<T>(endpoint: string, data?: any): Promise<T> {
+    const isFormData = data instanceof FormData;
+    const headers = isFormData ? getHeaders() : getHeaders({ 'Content-Type': 'application/json' });
+
     const response = await fetch(`${API_BASE}${endpoint}`, {
       method: 'POST',
-      headers: getHeaders({ 'Content-Type': 'application/json' }),
+      headers,
       credentials: 'include',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
     });
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
