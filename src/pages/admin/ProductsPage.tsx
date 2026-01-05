@@ -553,12 +553,12 @@ const ProductsPage = () => {
                     data-testid="input-product-images"
                   />
                   <div className="text-xs text-muted-foreground space-y-2 bg-blue-50 dark:bg-blue-950/20 p-3 rounded border border-blue-200 dark:border-blue-800">
-                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Upload Image Instructions:</p>
+                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Image Upload Instructions:</p>
                     <div className="space-y-1 ml-2">
-                      <p>✓ <strong>Click "Upload Images"</strong> or click the dashed box to select images from your device</p>
-                      <p>✓ <strong>Multiple images:</strong> Select multiple files at once to add them all</p>
-                      <p>✓ <strong>Supported formats:</strong> JPG, PNG, WebP, GIF, and other image formats</p>
-                      <p>✓ <strong>Reorder:</strong> Remove any image using the X button and re-upload in desired order</p>
+                      <p>✓ <strong>Click "Upload Images"</strong> to upload from your device, or click the dashed box</p>
+                      <p>✓ <strong>"Paste URL"</strong> button to add external image URLs</p>
+                      <p>✓ <strong>Multiple files:</strong> Upload multiple images at once</p>
+                      <p>✓ <strong>Remove any image:</strong> Use the X button to remove and reorder images</p>
                     </div>
                     {formData.images.split(',').filter(u => u.trim()).length > 0 && (
                       <p className="text-green-700 dark:text-green-200 font-semibold">✓ {formData.images.split(',').filter(u => u.trim()).length} image(s) added</p>
