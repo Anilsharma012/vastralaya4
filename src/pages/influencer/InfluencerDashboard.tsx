@@ -109,6 +109,8 @@ const InfluencerDashboard = () => {
       await api.post('/influencer/logout', {});
     } catch (error) {}
     localStorage.removeItem('influencer');
+    localStorage.removeItem('influencer_token');
+    api.clearToken();
     navigate('/influencer/login');
   };
 
