@@ -993,7 +993,7 @@ const ProductDetail = () => {
                       </Button>
                       <Button
                         onClick={handleSubmitReview}
-                        disabled={submittingReview}
+                        disabled={submittingReview || userOrders.length === 0 || !selectedOrderId}
                         className="btn-primary"
                         data-testid="button-submit-review"
                       >
