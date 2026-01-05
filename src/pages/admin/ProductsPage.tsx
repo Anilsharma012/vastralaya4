@@ -223,8 +223,6 @@ const ProductsPage = () => {
     setSizeChartRows([]);
     setShowSizeChartForm(false);
     setEditingProduct(null);
-    setImagePreviews(new Map());
-    setUploadedFiles({});
   };
 
   const openEditDialog = async (product: Product) => {
