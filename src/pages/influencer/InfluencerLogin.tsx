@@ -26,9 +26,13 @@ const InfluencerLogin = () => {
     
     setIsLoading(true);
     try {
-      const response = await api.post<{ influencer: any }>('/influencer/login', { username, password });
-      
+      const response = await api.post<{ influencer: any; token: string }>('/influencer/login', { username, password });
+
+      // Store influencer info and token
       localStorage.setItem('influencer', JSON.stringify(response.influencer));
+      localStorage.setItem('influencer_token', response.token);
+      api.setToken(response.token);
+
       toast({ title: "Login successful" });
       navigate('/influencer/dashboard');
     } catch (error: any) {
