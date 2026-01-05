@@ -490,10 +490,16 @@ const ProductDetail = () => {
     );
   }
 
-  const hasColorVariants = product.colorVariants && product.colorVariants.length > 0;
-  const allImages = hasColorVariants && product.colorVariants[selectedColorVariant]?.images?.length > 0
-    ? product.colorVariants[selectedColorVariant].images
-    : (product.images?.length > 0 ? product.images : ['/placeholder-product.jpg']);
+  const hasColorVariants = product && product.colorVariants && Array.isArray(product.colorVariants) && product.colorVariants.length > 0;
+  const currentColorImages = hasColorVariants && selectedColorVariant < product.colorVariants!.length
+    ? product.colorVariants![selectedColorVariant]?.images
+    : null;
+
+  const allImages = (currentColorImages && Array.isArray(currentColorImages) && currentColorImages.length > 0)
+    ? currentColorImages
+    : (product.images && Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : ['/placeholder-product.jpg']);
 
   const currentVariant = product.variants[selectedVariant];
   const currentPrice = currentVariant?.price || product.price;
