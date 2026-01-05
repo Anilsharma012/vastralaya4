@@ -133,11 +133,16 @@ const ProductDetail = () => {
         setSelectedImage(0);
         setSelectedColorVariant(0);
 
-        console.log('Product loaded:', {
+        console.log('=== PRODUCT LOADED ===', {
           name: productData.name,
-          hasColorVariants: productData.colorVariants && productData.colorVariants.length > 0,
+          slug: productData.slug,
+          hasColorVariants: !!(productData.colorVariants && Array.isArray(productData.colorVariants) && productData.colorVariants.length > 0),
           colorVariantsCount: productData.colorVariants?.length || 0,
-          colorVariants: productData.colorVariants
+          colorVariantsStructure: productData.colorVariants?.map((cv: any) => ({
+            color: cv.color,
+            imageCount: cv.images?.length || 0
+          })),
+          fullColorVariants: JSON.stringify(productData.colorVariants)
         });
       } catch (err: any) {
         console.error('Error fetching product:', err);
