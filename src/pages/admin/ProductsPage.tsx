@@ -592,13 +592,13 @@ const ProductsPage = () => {
                   <div className="text-xs text-muted-foreground space-y-2 bg-blue-50 dark:bg-blue-950/20 p-3 rounded border border-blue-200 dark:border-blue-800">
                     <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Image Upload Instructions:</p>
                     <div className="space-y-1 ml-2">
-                      <p>✓ <strong>Preview locally:</strong> Click "Upload Images" to preview files before saving</p>
-                      <p>✓ <strong>Save with URLs:</strong> Paste external image URLs in the field above (recommended)</p>
-                      <p>✓ <strong>Format:</strong> Separate multiple URLs with commas</p>
+                      <p>✓ <strong>Click "Upload Images"</strong> to select and upload your files (automatically saves)</p>
+                      <p>✓ <strong>Or paste image URLs</strong> directly in the field above if you have external links</p>
+                      <p>✓ <strong>Format for URLs:</strong> Separate multiple URLs with commas</p>
                       <p className="text-[11px] italic">Example: https://example.com/image1.jpg, https://example.com/image2.jpg</p>
                     </div>
                     {imagePreviews.size > 0 && (
-                      <p className="text-amber-700 dark:text-amber-200 font-semibold">⚠️ You have {imagePreviews.size} local preview(s). Add external URLs above to save them.</p>
+                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {imagePreviews.size} image(s) ready to save</p>
                     )}
                   </div>
                 </div>
