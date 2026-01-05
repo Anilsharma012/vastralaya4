@@ -89,22 +89,31 @@ export default function ReferralsPage() {
   };
 
   const handleShare = async () => {
-    const shareText = `Join me on Shri Balaji Vastralaya! Use my referral code ${referralCode} and get ₹100 off on your first purchase! ${referralLink}`;
+    if (!referralData) {
+      toast({
+        title: 'Error',
+        description: 'Referral data not loaded yet',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const shareText = `Join me on Shri Balaji Vastralaya! Use my referral code ${referralData.code} and get ₹100 off on your first purchase! ${referralData.link}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'Shri Balaji Vastralaya',
           text: shareText,
-          url: referralLink,
+          url: referralData.link,
         });
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
-          handleCopy(referralLink, 'Referral link');
+          handleCopy(referralData.link, 'Referral link');
         }
       }
     } else {
-      handleCopy(referralLink, 'Referral link');
+      handleCopy(referralData.link, 'Referral link');
     }
   };
 
