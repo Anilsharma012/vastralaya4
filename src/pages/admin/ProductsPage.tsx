@@ -381,7 +381,7 @@ const ProductsPage = () => {
                 </div>
                 <div className="col-span-2 space-y-3">
                   <Label>Product Images</Label>
-                  <div className="flex gap-2 mb-3">
+                  <div className="flex flex-wrap gap-2 mb-3">
                     <label className="flex items-center gap-2">
                       <input
                         type="file"
@@ -389,48 +389,33 @@ const ProductsPage = () => {
                         accept="image/*"
                         onChange={async (e) => {
                           const files = e.currentTarget.files;
-                          if (files) {
-                            for (let i = 0; i < files.length; i++) {
-                              const file = files[i];
-                              try {
-                                const formDataToSend = new FormData();
-                                formDataToSend.append('file', file);
+                          if (!files || files.length === 0) return;
 
-                                const uploadResponse = await fetch('/api/admin/upload-image', {
-                                  method: 'POST',
-                                  body: formDataToSend,
-                                  headers: {
-                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                                  }
-                                });
+                          let uploadedCount = 0;
+                          for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            try {
+                              const formDataToSend = new FormData();
+                              formDataToSend.append('file', file);
 
-                                if (!uploadResponse.ok) {
-                                  const error = await uploadResponse.json();
-                                  toast({
-                                    title: `Failed to upload ${file.name}`,
-                                    description: error.message || 'Upload failed',
-                                    variant: "destructive"
-                                  });
-                                  continue;
-                                }
-
-                                const uploadData = await uploadResponse.json();
-                                const currentUrls = formData.images.split(',').filter(u => u.trim());
-                                currentUrls.push(uploadData.url);
-                                setFormData({ ...formData, images: currentUrls.join(', ') });
-                              } catch (error: any) {
-                                toast({
-                                  title: `Failed to upload ${file.name}`,
-                                  description: error.message || 'Network error',
-                                  variant: "destructive"
-                                });
-                              }
+                              const uploadData = await api.post<{ url: string; filename: string; size: number; mimetype: string }>('/admin/upload-image', formDataToSend);
+                              const currentUrls = formData.images.split(',').map(u => u.trim()).filter(Boolean);
+                              currentUrls.push(uploadData.url);
+                              setFormData({ ...formData, images: currentUrls.join(', ') });
+                              uploadedCount++;
+                            } catch (error: any) {
+                              toast({
+                                title: `Failed to upload ${file.name}`,
+                                description: error.message || 'Upload failed',
+                                variant: "destructive"
+                              });
                             }
+                          }
+                          if (uploadedCount > 0) {
                             toast({
-                              title: `Image(s) uploaded successfully`,
+                              title: `${uploadedCount} image(s) uploaded successfully`,
                               description: "Ready to save your product"
                             });
-                            e.currentTarget.value = '';
                           }
                         }}
                         className="hidden"
@@ -451,7 +436,27 @@ const ProductsPage = () => {
                         Upload Images
                       </Button>
                     </label>
-                    <span className="text-xs text-muted-foreground self-center">Select one or multiple images from your device</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const url = prompt('Enter image URL:');
+                        if (url && url.trim()) {
+                          const currentUrls = formData.images.split(',').map(u => u.trim()).filter(Boolean);
+                          currentUrls.push(url.trim());
+                          setFormData({ ...formData, images: currentUrls.join(', ') });
+                          toast({
+                            title: "Image URL added",
+                            description: "Image preview will appear once loaded"
+                          });
+                        }
+                      }}
+                      className="gap-2"
+                    >
+                      <ImagePlus className="h-4 w-4" />
+                      Paste URL
+                    </Button>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {formData.images.split(',').filter(url => url.trim()).map((url, index) => (
