@@ -1,15 +1,61 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Share2, Copy, Users, Gift, TrendingUp, CheckCircle } from 'lucide-react';
+import { api } from '@/lib/api';
+
+interface ReferralStats {
+  totalReferrals: number;
+  successfulReferrals: number;
+  totalRewards: number;
+  pendingRewards: number;
+}
+
+interface ReferralData {
+  code: string;
+  link: string;
+  stats: ReferralStats;
+}
 
 export default function ReferralsPage() {
   const { toast } = useToast();
-  const referralCode = 'SHRIBALAJI' + Math.random().toString(36).substring(2, 6).toUpperCase();
-  const referralLink = `https://shribalaji.com?ref=${referralCode}`;
+  const [referralData, setReferralData] = useState<ReferralData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [referrals, setReferrals] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadReferralData();
+  }, []);
+
+  const loadReferralData = async () => {
+    try {
+      setIsLoading(true);
+      // Get user's referral info
+      const response = await api.get('/user/referral-info');
+      setReferralData(response);
+
+      // Get referral history
+      try {
+        const referralsResponse = await api.get('/user/referral-history');
+        setReferrals(referralsResponse.referrals || []);
+      } catch (error) {
+        // If endpoint doesn't exist, just skip
+        console.error('Failed to load referral history:', error);
+      }
+    } catch (error) {
+      console.error('Failed to load referral data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load referral information',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCopy = async (text: string, label: string) => {
     try {
