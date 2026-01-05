@@ -224,6 +224,7 @@ const ProductsPage = () => {
     setSizeChartRows([]);
     setShowSizeChartForm(false);
     setEditingProduct(null);
+    setImagePreviews({});
   };
 
   const openEditDialog = async (product: Product) => {
