@@ -78,6 +78,9 @@ const upload = multer({
 // Make upload middleware available as app.upload
 (app as any).upload = upload;
 
+// Serve uploaded files
+app.use('/uploads', express.static(uploadsDir));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/public', publicRoutes);
