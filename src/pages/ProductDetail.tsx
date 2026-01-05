@@ -295,6 +295,43 @@ const ProductDetail = () => {
     }));
   };
 
+  const fetchUserOrders = async () => {
+    setFetchingOrders(true);
+    try {
+      const response = await api.get<{ orders: any[] }>('/user/orders?limit=100');
+      const ordersWithProduct = response.orders?.filter((order: any) => {
+        return order.items?.some((item: any) => item.productId?.toString() === product?._id?.toString());
+      }) || [];
+      setUserOrders(ordersWithProduct);
+      if (ordersWithProduct.length > 0) {
+        setSelectedOrderId(ordersWithProduct[0]._id);
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      toast({
+        title: 'Failed to load orders',
+        description: 'Please try again',
+        variant: 'destructive'
+      });
+    } finally {
+      setFetchingOrders(false);
+    }
+  };
+
+  const handleOpenReviewForm = () => {
+    if (!user) {
+      toast({
+        title: "Please Login",
+        description: "You need to login to submit a review",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
+    setShowReviewForm(true);
+    fetchUserOrders();
+  };
+
   const handleSubmitReview = async () => {
     if (!product) return;
 
@@ -305,6 +342,15 @@ const ProductDetail = () => {
         variant: "destructive"
       });
       navigate('/login');
+      return;
+    }
+
+    if (!selectedOrderId) {
+      toast({
+        title: "Select an Order",
+        description: "Please select the order from which you purchased this product",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -320,6 +366,7 @@ const ProductDetail = () => {
     try {
       await api.post('/user/reviews', {
         productId: product._id,
+        orderId: selectedOrderId,
         rating: reviewFormData.rating,
         title: reviewFormData.title,
         comment: reviewFormData.comment,
