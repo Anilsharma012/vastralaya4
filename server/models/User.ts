@@ -5,6 +5,7 @@ export interface IUser extends Document {
   password: string;
   name: string;
   phone?: string;
+  referralCode?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
