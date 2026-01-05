@@ -944,7 +944,7 @@ const ProductDetail = () => {
                         placeholder="Tell us about your experience with this product..."
                         value={reviewFormData.comment}
                         onChange={(e) => setReviewFormData({ ...reviewFormData, comment: e.target.value })}
-                        disabled={submittingReview}
+                        disabled={submittingReview || userOrders.length === 0}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground resize-none"
                         rows={4}
                         data-testid="textarea-review-comment"
