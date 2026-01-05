@@ -16,6 +16,7 @@ const UserSchema = new Schema<IUser>({
   password: { type: String, required: true },
   name: { type: String, required: true },
   phone: { type: String },
+  referralCode: { type: String, unique: true, sparse: true },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 
