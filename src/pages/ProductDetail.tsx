@@ -99,6 +99,9 @@ const ProductDetail = () => {
   });
   const [reviewImages, setReviewImages] = useState<File[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [userOrders, setUserOrders] = useState<any[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [fetchingOrders, setFetchingOrders] = useState(false);
 
   // Size chart modal state
   const [showSizeChartModal, setShowSizeChartModal] = useState(false);
