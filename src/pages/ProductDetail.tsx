@@ -127,6 +127,10 @@ const ProductDetail = () => {
         setProduct(data.product);
         setRelatedProducts(data.relatedProducts || []);
         setReviews(data.reviews || []);
+
+        // Reset image selection when product changes
+        setSelectedImage(0);
+        setSelectedColorVariant(0);
       } catch (err: any) {
         console.error('Error fetching product:', err);
         setError(err.response?.data?.message || 'Product not found');
