@@ -339,7 +339,7 @@ router.get('/products/:id', async (req, res: Response) => {
 
 router.post('/products', async (req: AuthRequest, res: Response) => {
   try {
-    const { name, description, shortDescription, categoryId, subcategoryId, images, price, comparePrice, sku, stock, variants, attributes, tags, sizeChart, sizeInventory, isActive, isFeatured, isNewArrival, isBestSeller } = req.body;
+    const { name, description, shortDescription, categoryId, subcategoryId, images, price, comparePrice, sku, stock, variants, attributes, tags, sizeChart, sizeInventory, colorVariants, isActive, isFeatured, isNewArrival, isBestSeller } = req.body;
 
     if (!name || !categoryId || !price || !sku) {
       return res.status(400).json({ message: 'Name, category, price, and SKU are required' });
@@ -357,6 +357,7 @@ router.post('/products', async (req: AuthRequest, res: Response) => {
       images: images || [], price, comparePrice, sku, stock: stock || 0,
       variants: variants || [], attributes: attributes || {},
       tags: tags || [], sizeChart: sizeChart || undefined, sizeInventory: sizeInventory || undefined,
+      colorVariants: colorVariants || undefined,
       isActive: isActive !== undefined ? isActive : true,
       isFeatured: isFeatured || false, isNewArrival: isNewArrival || false, isBestSeller: isBestSeller || false
     });
@@ -374,7 +375,7 @@ router.put('/products/:id', async (req: AuthRequest, res: Response) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: 'Product not found' });
 
-    const updates = ['name', 'description', 'shortDescription', 'categoryId', 'subcategoryId', 'images', 'price', 'comparePrice', 'sku', 'stock', 'variants', 'attributes', 'tags', 'sizeChart', 'sizeInventory', 'isActive', 'isFeatured', 'isNewArrival', 'isBestSeller'];
+    const updates = ['name', 'description', 'shortDescription', 'categoryId', 'subcategoryId', 'images', 'price', 'comparePrice', 'sku', 'stock', 'variants', 'attributes', 'tags', 'sizeChart', 'sizeInventory', 'colorVariants', 'isActive', 'isFeatured', 'isNewArrival', 'isBestSeller'];
     updates.forEach(field => {
       if (req.body[field] !== undefined) (product as any)[field] = req.body[field];
     });

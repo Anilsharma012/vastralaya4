@@ -89,6 +89,7 @@ const ProductDetail = () => {
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState(0);
+  const [selectedColorVariant, setSelectedColorVariant] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [pincode, setPincode] = useState("");
@@ -123,9 +124,26 @@ const ProductDetail = () => {
       try {
         const data = await api.get<{ product: ProductData; relatedProducts: ProductData[]; reviews: ReviewData[] }>(`/public/products/${productId}`);
 
-        setProduct(data.product);
+        const productData = data.product;
+        setProduct(productData);
         setRelatedProducts(data.relatedProducts || []);
         setReviews(data.reviews || []);
+
+        // Reset image and color selection when product changes
+        setSelectedImage(0);
+        setSelectedColorVariant(0);
+
+        console.log('=== PRODUCT LOADED ===', {
+          name: productData.name,
+          slug: productData.slug,
+          hasColorVariants: !!(productData.colorVariants && Array.isArray(productData.colorVariants) && productData.colorVariants.length > 0),
+          colorVariantsCount: productData.colorVariants?.length || 0,
+          colorVariantsStructure: productData.colorVariants?.map((cv: any) => ({
+            color: cv.color,
+            imageCount: cv.images?.length || 0
+          })),
+          fullColorVariants: JSON.stringify(productData.colorVariants)
+        });
       } catch (err: any) {
         console.error('Error fetching product:', err);
         setError(err.response?.data?.message || 'Product not found');
@@ -485,7 +503,17 @@ const ProductDetail = () => {
     );
   }
 
-  const allImages = product.images?.length > 0 ? product.images : ['/placeholder-product.jpg'];
+  const hasColorVariants = product && product.colorVariants && Array.isArray(product.colorVariants) && product.colorVariants.length > 0;
+  const currentColorImages = hasColorVariants && selectedColorVariant < product.colorVariants!.length
+    ? product.colorVariants![selectedColorVariant]?.images
+    : null;
+
+  const allImages = (currentColorImages && Array.isArray(currentColorImages) && currentColorImages.length > 0)
+    ? currentColorImages
+    : (product.images && Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : ['/placeholder-product.jpg']);
+
   const currentVariant = product.variants[selectedVariant];
   const currentPrice = currentVariant?.price || product.price;
   const currentComparePrice = currentVariant?.comparePrice || product.comparePrice;
@@ -595,6 +623,31 @@ const ProductDetail = () => {
                 )}
               </div>
 
+              {hasColorVariants && product.colorVariants && product.colorVariants.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-foreground mb-3">Color</h3>
+                  <div className="flex gap-2 flex-wrap">
+                    {product.colorVariants.map((colorVariant, index) => (
+                      <button
+                        key={`color-${index}`}
+                        onClick={() => {
+                          setSelectedColorVariant(index);
+                          setSelectedImage(0);
+                        }}
+                        className={`px-4 py-2 rounded-lg border-2 font-medium transition-all ${
+                          selectedColorVariant === index
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background text-foreground hover:border-primary"
+                        }`}
+                        data-testid={`button-color-${index}`}
+                      >
+                        {colorVariant.color || `Color ${index + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {product.variants.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-foreground mb-3">Size</h3>
@@ -608,8 +661,8 @@ const ProductDetail = () => {
                         }}
                         disabled={variant.stock === 0}
                         className={`min-w-[48px] h-10 px-3 text-sm font-medium rounded border transition-all ${
-                          selectedVariant === index 
-                            ? "border-primary bg-primary text-primary-foreground" 
+                          selectedVariant === index
+                            ? "border-primary bg-primary text-primary-foreground"
                             : variant.stock === 0
                               ? "border-border bg-muted text-muted-foreground cursor-not-allowed line-through"
                               : "border-border bg-background text-foreground hover:border-primary"
