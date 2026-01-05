@@ -478,15 +478,15 @@ const ProductsPage = () => {
                     data-testid="input-product-images"
                   />
                   <div className="text-xs text-muted-foreground space-y-2 bg-blue-50 dark:bg-blue-950/20 p-3 rounded border border-blue-200 dark:border-blue-800">
-                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Image Upload Instructions:</p>
+                    <p className="font-semibold text-blue-900 dark:text-blue-100">💡 Image URL Instructions:</p>
                     <div className="space-y-1 ml-2">
-                      <p>✓ <strong>Click "Upload Images"</strong> to select and upload your files (automatically saves)</p>
-                      <p>✓ <strong>Or paste image URLs</strong> directly in the field above if you have external links</p>
-                      <p>✓ <strong>Format for URLs:</strong> Separate multiple URLs with commas</p>
+                      <p>✓ <strong>Use external image URLs</strong> (recommended for best performance)</p>
+                      <p>✓ <strong>Click "Add Image URL"</strong> to add URLs one by one, or paste below</p>
+                      <p>✓ <strong>Format:</strong> Separate multiple URLs with commas</p>
                       <p className="text-[11px] italic">Example: https://example.com/image1.jpg, https://example.com/image2.jpg</p>
                     </div>
                     {formData.images.split(',').filter(u => u.trim()).length > 0 && (
-                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {formData.images.split(',').filter(u => u.trim()).length} image(s) added</p>
+                      <p className="text-green-700 dark:text-green-200 font-semibold">✓ {formData.images.split(',').filter(u => u.trim()).length} image URL(s) added</p>
                     )}
                   </div>
                 </div>
