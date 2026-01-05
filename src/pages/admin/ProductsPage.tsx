@@ -84,7 +84,8 @@ const ProductsPage = () => {
   const [sizeChartFieldNames, setSizeChartFieldNames] = useState<string[]>([]);
   const [sizeChartRows, setSizeChartRows] = useState<any[]>([]);
   const [showSizeChartForm, setShowSizeChartForm] = useState(false);
-  const [imagePreviews, setImagePreviews] = useState<{ [key: string]: string }>({});
+  const [imagePreviews, setImagePreviews] = useState<Map<number, string>>(new Map());
+  const [uploadedFiles, setUploadedFiles] = useState<{ [key: number]: File }>({});
 
   const [sizeInventory, setSizeInventory] = useState({
     S: 0,
