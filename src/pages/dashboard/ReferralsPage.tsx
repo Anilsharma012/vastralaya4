@@ -59,27 +59,47 @@ export default function ReferralsPage() {
 
   const handleCopy = async (text: string, label: string) => {
     try {
+      // Try modern clipboard API first
       if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
+        try {
+          await navigator.clipboard.writeText(text);
+          toast({
+            title: 'Copied!',
+            description: `${label} copied to clipboard`,
+          });
+          return;
+        } catch (clipboardError) {
+          console.error('Clipboard API failed:', clipboardError);
+          // Fall through to fallback method
+        }
+      }
+
+      // Fallback method for non-secure contexts
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+
+      // Select text
+      textArea.select();
+      textArea.setSelectionRange(0, text.length);
+
+      // Try to copy
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+
+      if (successful) {
         toast({
           title: 'Copied!',
           description: `${label} copied to clipboard`,
         });
       } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        toast({
-          title: 'Copied!',
-          description: `${label} copied to clipboard`,
-        });
+        throw new Error('Copy command failed');
       }
     } catch (error) {
+      console.error('Copy error:', error);
       toast({
         title: 'Copy failed',
         description: 'Please select and copy the text manually',
