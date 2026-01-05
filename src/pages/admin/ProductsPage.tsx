@@ -474,72 +474,46 @@ const ProductsPage = () => {
                     <span className="text-xs text-muted-foreground self-center">Or add image URLs below (recommended)</span>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    {formData.images.split(',').filter(url => url.trim()).map((url, index) => {
-                      const imageUrl = url.trim();
-                      // Find preview for data URLs by looking for matching base64 data
-                      let displaySrc = imageUrl;
-                      if (imageUrl.startsWith('data:')) {
-                        // Search for the preview that matches this URL's structure
-                        const matchingPreview = Object.entries(imagePreviews).find(([_, preview]) =>
-                          preview && preview.includes('data:image')
-                        );
-                        // For data URLs, use a stable key based on index
-                        const previewKey = `uploaded_${index}`;
-                        if (imagePreviews[previewKey]) {
-                          displaySrc = imagePreviews[previewKey];
-                        } else if (matchingPreview) {
-                          displaySrc = matchingPreview[1];
-                        }
-                      }
-
-                      return (
-                        <div key={index} className="relative group">
-                          <div className="w-24 h-24 rounded-lg border-2 border-border bg-muted flex items-center justify-center overflow-hidden relative">
-                            <img
-                              src={displaySrc}
-                              alt={`Product ${index + 1}`}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              onError={(e) => {
-                                const img = e.currentTarget;
-                                img.style.display = 'none';
-                                const parent = img.parentElement;
-                                if (parent && !parent.querySelector('[data-error]')) {
-                                  const errorEl = document.createElement('div');
-                                  errorEl.setAttribute('data-error', 'true');
-                                  errorEl.className = 'text-xs text-center text-muted-foreground absolute inset-0 flex flex-col items-center justify-center px-1 bg-red-50 dark:bg-red-950/20';
-                                  errorEl.textContent = imageUrl.startsWith('data:') ? '📸 Preview' : '⚠️ Load Failed';
-                                  parent.appendChild(errorEl);
-                                }
-                              }}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const urls = formData.images.split(',').filter(u => u.trim());
-                              urls.splice(index, 1);
-                              setFormData({ ...formData, images: urls.join(', ') });
-                              // Clean up preview
-                              const newPreviews = { ...imagePreviews };
-                              const previewKey = `uploaded_${index}`;
-                              if (newPreviews[previewKey]) {
-                                delete newPreviews[previewKey];
+                    {formData.images.split(',').filter(url => url.trim()).map((url, index) => (
+                      <div key={index} className="relative group">
+                        <div className="w-24 h-24 rounded-lg border-2 border-border bg-muted flex items-center justify-center overflow-hidden relative">
+                          <img
+                            src={url.trim()}
+                            alt={`Product ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              const img = e.currentTarget;
+                              img.style.display = 'none';
+                              const parent = img.parentElement;
+                              if (parent && !parent.querySelector('[data-error]')) {
+                                const errorEl = document.createElement('div');
+                                errorEl.setAttribute('data-error', 'true');
+                                errorEl.className = 'text-xs text-center text-muted-foreground absolute inset-0 flex flex-col items-center justify-center px-1 bg-red-50 dark:bg-red-950/20';
+                                errorEl.textContent = url.trim().startsWith('data:') ? '📸 Preview' : '⚠️ Load Failed';
+                                parent.appendChild(errorEl);
                               }
-                              setImagePreviews(newPreviews);
                             }}
-                            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                            data-testid={`button-remove-image-${index}`}
-                            title="Remove image"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                          {index === 0 && (
-                            <span className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground text-[11px] text-center py-1 rounded-b-lg font-semibold">Main</span>
-                          )}
+                          />
                         </div>
-                      );
-                    })}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const urls = formData.images.split(',').filter(u => u.trim());
+                            urls.splice(index, 1);
+                            setFormData({ ...formData, images: urls.join(', ') });
+                          }}
+                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                          data-testid={`button-remove-image-${index}`}
+                          title="Remove image"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        {index === 0 && (
+                          <span className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground text-[11px] text-center py-1 rounded-b-lg font-semibold">Main</span>
+                        )}
+                      </div>
+                    ))}
                     <div
                       className="w-24 h-24 border-2 border-dashed border-muted-foreground rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
                       onClick={() => {
