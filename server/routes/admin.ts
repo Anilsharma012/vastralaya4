@@ -1551,4 +1551,38 @@ router.delete('/products/bulk-delete', async (req: AuthRequest, res: Response) =
   }
 });
 
+// ========== IMAGE UPLOAD ==========
+router.post('/upload-image', async (req: AuthRequest, res: Response) => {
+  try {
+    const { imageData, fileName } = req.body;
+
+    if (!imageData) {
+      return res.status(400).json({ message: 'Image data is required' });
+    }
+
+    // Validate that it's a base64 image
+    if (!imageData.startsWith('data:image')) {
+      return res.status(400).json({ message: 'Invalid image format. Must be base64 image data' });
+    }
+
+    // Create a media entry for the image
+    const media = new Media({
+      url: imageData,
+      fileName: fileName || 'image'
+    });
+
+    await media.save();
+
+    res.status(201).json({
+      success: true,
+      url: media.url,
+      id: media._id,
+      message: 'Image uploaded successfully'
+    });
+  } catch (error) {
+    console.error('Image upload error:', error);
+    res.status(500).json({ message: 'Image upload failed' });
+  }
+});
+
 export default router;
