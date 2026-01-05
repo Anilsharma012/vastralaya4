@@ -382,29 +382,61 @@ const ProductsPage = () => {
                 <div className="col-span-2 space-y-3">
                   <Label>Product Images</Label>
                   <div className="flex gap-2 mb-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const url = prompt('Enter image URL:');
-                        if (url && url.trim()) {
-                          const currentUrls = formData.images.split(',').filter(u => u.trim());
-                          currentUrls.push(url.trim());
-                          setFormData({ ...formData, images: currentUrls.join(', ') });
-                          toast({
-                            title: "Image URL added",
-                            description: "Image preview will appear once loaded"
-                          });
-                        }
-                      }}
-                      className="gap-2"
-                      data-testid="button-add-image-url"
-                    >
-                      <ImagePlus className="h-4 w-4" />
-                      Add Image URL
-                    </Button>
-                    <span className="text-xs text-muted-foreground self-center">Paste external image URLs</span>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const files = e.currentTarget.files;
+                          if (files) {
+                            const newUrls: string[] = [];
+                            for (let i = 0; i < files.length; i++) {
+                              const file = files[i];
+                              try {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const result = event.target?.result as string;
+                                  newUrls.push(result);
+                                  if (newUrls.length === files.length) {
+                                    const currentUrls = formData.images.split(',').filter(u => u.trim());
+                                    setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
+                                    toast({
+                                      title: `${newUrls.length} image(s) added`,
+                                      description: "Images are ready to save"
+                                    });
+                                    e.currentTarget.value = '';
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              } catch (error) {
+                                toast({
+                                  title: `Failed to process ${file.name}`,
+                                  variant: "destructive"
+                                });
+                              }
+                            }
+                          }
+                        }}
+                        className="hidden"
+                        data-testid="input-file-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          const input = (e.currentTarget.parentElement?.querySelector('input[type="file"]') as HTMLInputElement);
+                          if (input) input.click();
+                        }}
+                        className="gap-2"
+                        data-testid="button-add-image-url"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload Images
+                      </Button>
+                    </label>
+                    <span className="text-xs text-muted-foreground self-center">Select one or multiple images from your device</span>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {formData.images.split(',').filter(url => url.trim()).map((url, index) => (
