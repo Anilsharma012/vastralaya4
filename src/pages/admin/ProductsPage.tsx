@@ -321,13 +321,25 @@ const ProductsPage = () => {
 
       // Load color variants if available
       const colorVariantsData = (fullProduct as any).colorVariants;
+      console.log('Loading product for edit:', {
+        productId: fullProduct._id,
+        productName: fullProduct.name,
+        hasColorVariants: !!colorVariantsData,
+        colorVariantsArray: colorVariantsData,
+        isArray: Array.isArray(colorVariantsData),
+        length: colorVariantsData?.length || 0
+      });
+
       if (colorVariantsData && Array.isArray(colorVariantsData) && colorVariantsData.length > 0) {
-        setColorVariants(colorVariantsData.map((cv: any) => ({
+        const mappedVariants = colorVariantsData.map((cv: any) => ({
           color: cv.color || '',
-          images: Array.isArray(cv.images) ? cv.images : []
-        })));
+          images: Array.isArray(cv.images) ? [...cv.images] : []
+        }));
+        console.log('Mapped color variants:', mappedVariants);
+        setColorVariants(mappedVariants);
         setShowColorVariantsForm(true);
       } else {
+        console.log('No color variants found for this product');
         setColorVariants([]);
         setShowColorVariantsForm(false);
       }
