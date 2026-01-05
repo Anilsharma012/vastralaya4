@@ -914,6 +914,7 @@ const ProductDetail = () => {
                             key={star}
                             onClick={() => setReviewFormData({ ...reviewFormData, rating: star })}
                             className="text-3xl transition-colors"
+                            disabled={userOrders.length === 0 || submittingReview}
                             data-testid={`button-star-${star}`}
                           >
                             <span className={star <= reviewFormData.rating ? 'text-yellow-500' : 'text-muted-foreground'}>
@@ -931,7 +932,7 @@ const ProductDetail = () => {
                         placeholder="Summary of your experience"
                         value={reviewFormData.title}
                         onChange={(e) => setReviewFormData({ ...reviewFormData, title: e.target.value })}
-                        disabled={submittingReview}
+                        disabled={submittingReview || userOrders.length === 0}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                         data-testid="input-review-title"
                       />
