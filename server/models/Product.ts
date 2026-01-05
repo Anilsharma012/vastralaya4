@@ -106,6 +106,7 @@ const ProductSchema = new Schema<IProduct>({
   sku: { type: String, required: true, unique: true },
   stock: { type: Number, default: 0 },
   variants: [ProductVariantSchema],
+  colorVariants: [ColorVariantSchema],
   sizeInventory: SizeInventorySchema,
   attributes: { type: Map, of: String },
   tags: [{ type: String }],
