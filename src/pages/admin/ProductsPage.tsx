@@ -392,16 +392,15 @@ const ProductsPage = () => {
                         input.multiple = true;
                         input.onchange = (e: any) => {
                           const files = Array.from(e.target.files as FileList);
-                          const maxFileSize = 2 * 1024 * 1024; // 2MB per file
+                          const maxFileSize = 5 * 1024 * 1024; // 5MB per file
                           const validFiles: File[] = [];
-                          const currentUrls = formData.images.split(',').filter(u => u.trim());
 
                           // Validate files first
                           for (const file of files) {
                             if (file.size > maxFileSize) {
                               toast({
                                 title: "File too large",
-                                description: `${file.name} is larger than 2MB. Please compress and try again.`,
+                                description: `${file.name} is larger than 5MB. Please compress and try again.`,
                                 variant: "destructive"
                               });
                               continue;
@@ -419,20 +418,27 @@ const ProductsPage = () => {
 
                           if (validFiles.length === 0) return;
 
-                          // Read all files and update state once
-                          let filesRead = 0;
-                          const newUrls = [...currentUrls];
+                          // Create previews and generate URLs
+                          let filesProcessed = 0;
+                          const newPreviews: { [key: string]: string } = { ...imagePreviews };
+                          const newUrls: string[] = [];
 
-                          validFiles.forEach((file) => {
+                          validFiles.forEach((file, fileIndex) => {
+                            const fileKey = `uploaded_${Date.now()}_${fileIndex}`;
+                            newUrls.push(`data:${file.type};name=${file.name}`);
+
                             const reader = new FileReader();
                             reader.onload = (event: any) => {
-                              newUrls.push(event.target.result);
-                              filesRead++;
-                              if (filesRead === validFiles.length) {
-                                setFormData({ ...formData, images: newUrls.join(', ') });
+                              newPreviews[fileKey] = event.target.result;
+                              filesProcessed++;
+
+                              if (filesProcessed === validFiles.length) {
+                                const currentUrls = formData.images.split(',').filter(u => u.trim());
+                                setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
+                                setImagePreviews(newPreviews);
                                 toast({
                                   title: "Success",
-                                  description: `${validFiles.length} image(s) uploaded successfully`
+                                  description: `${validFiles.length} image(s) uploaded and ready to preview`
                                 });
                               }
                             };
@@ -442,9 +448,11 @@ const ProductsPage = () => {
                                 description: `Failed to read ${file.name}`,
                                 variant: "destructive"
                               });
-                              filesRead++;
-                              if (filesRead === validFiles.length) {
-                                setFormData({ ...formData, images: newUrls.join(', ') });
+                              filesProcessed++;
+                              if (filesProcessed === validFiles.length) {
+                                const currentUrls = formData.images.split(',').filter(u => u.trim());
+                                setFormData({ ...formData, images: [...currentUrls, ...newUrls].join(', ') });
+                                setImagePreviews(newPreviews);
                               }
                             };
                             reader.readAsDataURL(file);
