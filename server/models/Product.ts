@@ -69,6 +69,11 @@ const SizeInventorySchema = new Schema({
   XXL: { type: Number, default: 0 },
 }, { _id: false });
 
+const ColorVariantSchema = new Schema({
+  color: { type: String, required: true },
+  images: [{ type: String }],
+}, { _id: true });
+
 const SizeChartRowSchema = new Schema({
   size: { type: String, required: true },
 }, { strict: false, _id: false });
