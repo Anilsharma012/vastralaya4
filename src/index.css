@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand Colors - Navy Blue + Gold (from logo) */
+    --background: 40 30% 97%;
+    --foreground: 220 40% 13%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 40% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 40% 13%;
+
+    /* Primary - Navy Blue */
+    --primary: 220 50% 20%;
+    --primary-foreground: 40 50% 95%;
+
+    /* Secondary - Soft Cream */
+    --secondary: 40 40% 94%;
+    --secondary-foreground: 220 40% 13%;
+
+    /* Muted - Light Gray */
+    --muted: 40 20% 95%;
+    --muted-foreground: 220 15% 45%;
+
+    /* Accent - Antique Gold */
+    --accent: 43 75% 50%;
+    --accent-foreground: 220 40% 13%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 43 75% 50%;
+
+    --radius: 1rem;
+
+    /* Custom Brand Colors */
+    --navy: 220 50% 20%;
+    --navy-light: 220 40% 30%;
+    --navy-dark: 220 55% 12%;
+    --gold: 43 75% 50%;
+    --gold-light: 43 60% 75%;
+    --gold-dark: 43 80% 40%;
+    --cream: 40 40% 97%;
+    --cream-dark: 40 30% 90%;
+    --mustard: 40 85% 55%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(220 50% 20% / 0.9), hsl(220 50% 20% / 0.7));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(40 30% 98%));
+    --gradient-accent: linear-gradient(135deg, hsl(43 75% 50%), hsl(43 80% 40%));
+    --gradient-gold: linear-gradient(135deg, hsl(43 75% 50%), hsl(40 85% 55%));
+    --gradient-navy: linear-gradient(135deg, hsl(220 50% 20%), hsl(220 55% 12%));
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px hsl(220 40% 13% / 0.06);
+    --shadow-md: 0 4px 16px hsl(220 40% 13% / 0.08);
+    --shadow-lg: 0 8px 32px hsl(220 40% 13% / 0.12);
+    --shadow-glow: 0 0 24px hsl(43 75% 50% / 0.35);
+
+    /* Sidebar */
+    --sidebar-background: 220 50% 20%;
+    --sidebar-foreground: 40 50% 95%;
+    --sidebar-primary: 43 75% 50%;
+    --sidebar-primary-foreground: 220 40% 13%;
+    --sidebar-accent: 220 40% 30%;
+    --sidebar-accent-foreground: 40 50% 95%;
+    --sidebar-border: 220 40% 25%;
+    --sidebar-ring: 43 75% 50%;
+  }
+
+  .dark {
+    --background: 220 40% 8%;
+    --foreground: 40 30% 95%;
+
+    --card: 220 35% 12%;
+    --card-foreground: 40 30% 95%;
+
+    --popover: 220 35% 12%;
+    --popover-foreground: 40 30% 95%;
+
+    --primary: 43 70% 55%;
+    --primary-foreground: 220 40% 10%;
+
+    --secondary: 220 30% 18%;
+    --secondary-foreground: 40 30% 95%;
+
+    --muted: 220 25% 18%;
+    --muted-foreground: 40 20% 65%;
+
+    --accent: 43 70% 50%;
+    --accent-foreground: 220 40% 10%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 25% 20%;
+    --input: 220 25% 20%;
+    --ring: 43 70% 55%;
+
+    --navy: 220 40% 70%;
+    --navy-light: 220 35% 80%;
+    --navy-dark: 220 45% 60%;
+    --gold: 43 70% 55%;
+    --gold-light: 43 50% 35%;
+    --gold-dark: 43 75% 45%;
+    --cream: 220 40% 8%;
+    --cream-dark: 220 35% 15%;
+
+    --sidebar-background: 220 35% 10%;
+    --sidebar-foreground: 40 30% 95%;
+    --sidebar-primary: 43 70% 55%;
+    --sidebar-primary-foreground: 220 40% 10%;
+    --sidebar-accent: 220 30% 18%;
+    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-border: 220 25% 20%;
+    --sidebar-ring: 43 70% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent to-gold-dark;
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-card-hover {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-navy-light transition-all duration-300 shadow-card hover:shadow-card-hover;
+  }
+
+  .btn-gold {
+    @apply bg-accent text-accent-foreground hover:bg-gold-dark transition-all duration-300;
+  }
+
+  .card-product {
+    @apply bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300;
+  }
+
+  .badge-new {
+    @apply bg-accent text-accent-foreground text-xs font-semibold px-2.5 py-1 rounded-full;
+  }
+
+  .badge-sale {
+    @apply bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full;
+  }
+}
