@@ -451,7 +451,6 @@ const ProductsPage = () => {
                                     const currentUrls = formData.images.split(',').filter(u => u.trim());
                                     const allUrls = [...currentUrls, ...response.urls];
                                     setFormData({ ...formData, images: allUrls.join(', ') });
-                                    setImagePreviews(newPreviews);
 
                                     toast({
                                       title: "Success!",
@@ -467,8 +466,6 @@ const ProductsPage = () => {
                                     description: uploadError.message || 'Failed to upload images to server',
                                     variant: "destructive"
                                   });
-                                  // Still show local preview even if upload failed
-                                  setImagePreviews(newPreviews);
                                 }
                               }
                             };
