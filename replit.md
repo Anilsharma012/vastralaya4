@@ -54,6 +54,7 @@ Preferred communication style: Simple, everyday language.
 - **Stock Management**: Color-wise stock quantity tracking.
 - **CMS Pages**: Admin-editable static pages (e.g., About Us, Policies).
 - **Order Tracking**: Public-facing order tracking with visual progress.
+- **Admin Settings Persistence**: Central settings storage with proper save/load functionality. Razorpay and Shiprocket secrets are masked in UI and only updated when admin enters new values. Checkout page dynamically shows payment methods based on admin configuration.
 
 ## External Dependencies
 
