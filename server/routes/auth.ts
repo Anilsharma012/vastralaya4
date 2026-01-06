@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { Admin, User } from '../models';
+import { Admin, User, Referral, Influencer } from '../models';
 import { generateToken, AuthRequest, verifyToken, verifyAdmin } from '../middleware/auth';
 
 const router = Router();
@@ -109,27 +109,77 @@ router.post('/admin/logout', (req, res: Response) => {
 
 router.post('/user/register', async (req, res: Response) => {
   try {
-    const { email, password, name, phone } = req.body;
+    const { email, password, name, phone, referralCode } = req.body;
     
     if (!email || !password || !name) {
       return res.status(400).json({ message: 'Email, password and name are required' });
     }
     
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+    const existingUserByEmail = await User.findOne({ email: email.toLowerCase() });
+    if (existingUserByEmail) {
+      return res.status(400).json({ message: 'Email already registered. Please use a different email or login.' });
+    }
+    
+    if (phone && phone.trim()) {
+      const existingUserByPhone = await User.findOne({ phone: phone.trim() });
+      if (existingUserByPhone) {
+        return res.status(400).json({ message: 'Mobile number already registered. Please use a different number.' });
+      }
     }
     
     const hashedPassword = await bcrypt.hash(password, 12);
+    
+    let referrerUserId: any = null;
+    let referrerType: 'user' | 'influencer' | null = null;
+    let referredByCode: string | null = null;
+    
+    if (referralCode && referralCode.trim()) {
+      const trimmedCode = referralCode.trim().toUpperCase();
+      
+      const referrerUser = await User.findOne({ referralCode: trimmedCode });
+      if (referrerUser) {
+        referrerUserId = referrerUser._id;
+        referrerType = 'user';
+        referredByCode = trimmedCode;
+      } else {
+        const referrerInfluencer = await Influencer.findOne({ referralCode: trimmedCode });
+        if (referrerInfluencer) {
+          referrerUserId = referrerInfluencer.userId;
+          referrerType = 'influencer';
+          referredByCode = trimmedCode;
+        }
+      }
+    }
     
     const user = new User({
       email: email.toLowerCase(),
       password: hashedPassword,
       name,
-      phone
+      phone: phone && phone.trim() ? phone.trim() : undefined,
+      referredBy: referredByCode,
+      referredByUserId: referrerUserId,
+      commissionTier: 'Bronze',
+      commissionRate: 5
     });
     
     await user.save();
+    
+    const userReferralCode = 'SHRIBALAJI' + user._id.toString().slice(-6).toUpperCase();
+    user.referralCode = userReferralCode;
+    await user.save();
+    
+    if (referrerUserId && referrerType) {
+      const referral = new Referral({
+        referrerId: referrerUserId,
+        referrerType: referrerType,
+        referredUserId: user._id,
+        referralCode: referredByCode,
+        status: 'pending',
+        commissionStatus: 'pending',
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      });
+      await referral.save();
+    }
     
     const token = generateToken({ userId: user._id });
     
@@ -142,11 +192,20 @@ router.post('/user/register', async (req, res: Response) => {
     
     res.status(201).json({
       message: 'Registration successful',
-      user: { _id: user._id, email: user.email, name: user.name },
+      user: { _id: user._id, email: user.email, name: user.name, referralCode: user.referralCode },
       token
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('User register error:', error);
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0];
+      if (field === 'email') {
+        return res.status(400).json({ message: 'Email already registered. Please use a different email or login.' });
+      }
+      if (field === 'phone') {
+        return res.status(400).json({ message: 'Mobile number already registered. Please use a different number.' });
+      }
+    }
     res.status(500).json({ message: 'Server error' });
   }
 });

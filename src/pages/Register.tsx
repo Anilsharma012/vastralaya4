@@ -1,24 +1,33 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Lock, Mail, User, Phone, ArrowLeft } from 'lucide-react';
+import { Lock, Mail, User, Phone, ArrowLeft, Gift } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export default function Register() {
+  const [searchParams] = useSearchParams();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { userRegister } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const refCode = searchParams.get('ref') || searchParams.get('referral');
+    if (refCode) {
+      setReferralCode(refCode.toUpperCase());
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +45,7 @@ export default function Register() {
     setIsLoading(true);
     
     try {
-      await userRegister(email, password, name, phone || undefined);
+      await userRegister(email, password, name, phone || undefined, referralCode || undefined);
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error: any) {
@@ -142,6 +151,28 @@ export default function Register() {
                     data-testid="input-register-confirm-password"
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                <div className="relative">
+                  <Gift className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="referralCode"
+                    type="text"
+                    placeholder="Enter referral code"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    className="pl-10 font-mono uppercase"
+                    readOnly={!!searchParams.get('ref') || !!searchParams.get('referral')}
+                    data-testid="input-register-referral"
+                  />
+                </div>
+                {referralCode && (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    <Gift className="h-3 w-3" />
+                    Referral code applied! You'll get special benefits.
+                  </p>
+                )}
               </div>
               <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-user-register">
                 {isLoading ? 'Creating Account...' : 'Create Account'}

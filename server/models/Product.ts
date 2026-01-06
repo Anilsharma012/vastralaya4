@@ -21,6 +21,7 @@ export interface ISizeInventory {
 export interface IColorVariant {
   color: string;
   images: string[];
+  stock: number;
 }
 
 export interface IProductVariant {
@@ -72,6 +73,7 @@ const SizeInventorySchema = new Schema({
 const ColorVariantSchema = new Schema({
   color: { type: String, required: true },
   images: [{ type: String }],
+  stock: { type: Number, default: 0 },
 }, { _id: true });
 
 const SizeChartRowSchema = new Schema({

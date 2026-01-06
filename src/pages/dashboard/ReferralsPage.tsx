@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Share2, Copy, Users, Gift, TrendingUp, CheckCircle } from 'lucide-react';
+import { Share2, Copy, Users, Gift, TrendingUp, CheckCircle, Crown, Percent, UserPlus } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface ReferralStats {
@@ -20,11 +20,23 @@ interface ReferralData {
   stats: ReferralStats;
 }
 
+interface CommissionInfo {
+  referredBy: string | null;
+  referredByUser: { name: string; email: string } | null;
+  currentTier: string;
+  currentRate: number;
+  successfulReferrals: number;
+  totalCommissionEarned: number;
+  pendingCommission: number;
+  commissionTiers: Array<{ tier: string; rate: number; requirement: string }>;
+}
+
 export default function ReferralsPage() {
   const { toast } = useToast();
   const [referralData, setReferralData] = useState<ReferralData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [referrals, setReferrals] = useState<any[]>([]);
+  const [commissionInfo, setCommissionInfo] = useState<CommissionInfo | null>(null);
 
   useEffect(() => {
     loadReferralData();
@@ -34,12 +46,20 @@ export default function ReferralsPage() {
     try {
       setIsLoading(true);
       // Get user's referral info
-      const response = await api.get('/user/referral-info');
+      const response = await api.get<ReferralData>('/user/referral-info');
       setReferralData(response);
+
+      // Get commission info
+      try {
+        const commissionResponse = await api.get<CommissionInfo>('/user/commission-info');
+        setCommissionInfo(commissionResponse);
+      } catch (error) {
+        console.error('Failed to load commission info:', error);
+      }
 
       // Get referral history
       try {
-        const referralsResponse = await api.get('/user/referral-history');
+        const referralsResponse = await api.get<{ referrals: any[] }>('/user/referral-history');
         setReferrals(referralsResponse.referrals || []);
       } catch (error) {
         // If endpoint doesn't exist, just skip
@@ -249,6 +269,78 @@ export default function ReferralsPage() {
           </Card>
         ))}
       </div>
+
+      {commissionInfo && (
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-500" />
+              Commission Details
+            </CardTitle>
+            <CardDescription>Your referral commission tier and earnings</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {commissionInfo.referredBy && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">You were referred by:</p>
+                <p className="font-medium">{commissionInfo.referredByUser?.name || commissionInfo.referredBy}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-amber-500/10 rounded-lg text-center">
+                <Crown className="h-6 w-6 mx-auto text-amber-500 mb-2" />
+                <p className="text-lg font-bold">{commissionInfo.currentTier}</p>
+                <p className="text-xs text-muted-foreground">Current Tier</p>
+              </div>
+              <div className="p-4 bg-green-500/10 rounded-lg text-center">
+                <Percent className="h-6 w-6 mx-auto text-green-500 mb-2" />
+                <p className="text-lg font-bold">{commissionInfo.currentRate}%</p>
+                <p className="text-xs text-muted-foreground">Commission Rate</p>
+              </div>
+              <div className="p-4 bg-blue-500/10 rounded-lg text-center">
+                <UserPlus className="h-6 w-6 mx-auto text-blue-500 mb-2" />
+                <p className="text-lg font-bold">{commissionInfo.successfulReferrals}</p>
+                <p className="text-xs text-muted-foreground">Successful Referrals</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">₹{commissionInfo.totalCommissionEarned}</p>
+                <p className="text-xs text-muted-foreground">Total Earned</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-amber-600">₹{commissionInfo.pendingCommission}</p>
+                <p className="text-xs text-muted-foreground">Pending Commission</p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <h4 className="font-semibold mb-3">Commission Tiers</h4>
+              <div className="space-y-2">
+                {commissionInfo.commissionTiers.map((tier) => (
+                  <div 
+                    key={tier.tier} 
+                    className={`flex items-center justify-between p-2 rounded ${
+                      tier.tier === commissionInfo.currentTier ? 'bg-primary/10 border border-primary/30' : 'bg-muted/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {tier.tier === commissionInfo.currentTier && <CheckCircle className="h-4 w-4 text-primary" />}
+                      <span className="font-medium">{tier.tier}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-primary">{tier.rate}%</span>
+                      <p className="text-xs text-muted-foreground">{tier.requirement}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

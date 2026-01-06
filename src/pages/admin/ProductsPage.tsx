@@ -101,6 +101,7 @@ const ProductsPage = () => {
   const [colorVariants, setColorVariants] = useState<Array<{
     color: string;
     images: string[];
+    stock: number;
   }>>([]);
   const [showColorVariantsForm, setShowColorVariantsForm] = useState(false);
   const [newColorName, setNewColorName] = useState('');
@@ -179,7 +180,8 @@ const ProductsPage = () => {
       const colorVariantsToSend = colorVariants && colorVariants.length > 0
         ? colorVariants.map(cv => ({
             color: cv.color || '',
-            images: Array.isArray(cv.images) ? cv.images : []
+            images: Array.isArray(cv.images) ? cv.images : [],
+            stock: cv.stock || 0
           }))
         : undefined;
 
@@ -333,7 +335,8 @@ const ProductsPage = () => {
       if (colorVariantsData && Array.isArray(colorVariantsData) && colorVariantsData.length > 0) {
         const mappedVariants = colorVariantsData.map((cv: any) => ({
           color: cv.color || '',
-          images: Array.isArray(cv.images) ? [...cv.images] : []
+          images: Array.isArray(cv.images) ? [...cv.images] : [],
+          stock: cv.stock || 0
         }));
         console.log('Mapped color variants:', mappedVariants);
         setColorVariants(mappedVariants);
@@ -836,6 +839,22 @@ const ProductsPage = () => {
                               </button>
                             </div>
 
+                            <div className="flex items-center gap-4 mb-2">
+                              <Label className="text-sm">Stock for {colorVariant.color}:</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={colorVariant.stock || 0}
+                                onChange={(e) => {
+                                  const updatedColors = [...colorVariants];
+                                  updatedColors[colorIdx].stock = parseInt(e.target.value) || 0;
+                                  setColorVariants(updatedColors);
+                                }}
+                                className="w-24"
+                                placeholder="0"
+                              />
+                            </div>
+
                             <div className="space-y-2">
                               <Label className="text-sm">Images for {colorVariant.color}</Label>
                               <div className="flex flex-wrap gap-2 mb-3">
@@ -939,7 +958,7 @@ const ProductsPage = () => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
                               if (newColorName.trim()) {
-                                setColorVariants([...colorVariants, { color: newColorName.trim(), images: [] }]);
+                                setColorVariants([...colorVariants, { color: newColorName.trim(), images: [], stock: 0 }]);
                                 setNewColorName('');
                               }
                             }
@@ -950,7 +969,7 @@ const ProductsPage = () => {
                           type="button"
                           onClick={() => {
                             if (newColorName.trim()) {
-                              setColorVariants([...colorVariants, { color: newColorName.trim(), images: [] }]);
+                              setColorVariants([...colorVariants, { color: newColorName.trim(), images: [], stock: 0 }]);
                               setNewColorName('');
                             }
                           }}

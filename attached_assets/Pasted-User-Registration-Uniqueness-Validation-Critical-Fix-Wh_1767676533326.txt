@@ -1,0 +1,101 @@
+User Registration – Uniqueness Validation (Critical Fix)
+
+While registering a new user, the system currently allows account creation even if the email ID or mobile number already exists.
+
+Expected Behavior:
+
+Email ID must be unique
+
+Mobile number must be unique
+
+If either the email ID or mobile number already exists in the database, the system should:
+
+Block registration
+
+Show a clear validation message (e.g., “Email or mobile number already registered”)
+
+This validation must apply to:
+
+Email + Password registration
+
+Email + Mobile Number registration
+
+Duplicate accounts must not be created under any condition.
+
+2️⃣ Referral-Based Registration – UI & Logic Fix
+
+Currently, when a user registers via a referral link:
+
+The referral code input box is missing
+
+Referral commission details are not properly reflected
+
+Expected Behavior:
+
+Referral code should be auto-applied when a user lands via a referral link.
+
+The referral code must be visible (read-only) in the “Create Account” section.
+
+On successful registration via referral:
+
+Referral mapping must be stored correctly.
+
+Commission structure should be applied automatically.
+
+3️⃣ Referral Commission Visibility (User Dashboard)
+
+Users who joined via a referral should be able to see:
+
+Referral commission details in their dashboard
+
+Commission percentage / tier details clearly
+
+This should be a fully functional and stable module, not just static UI.
+
+4️⃣ Color-wise Stock Management (New Enhancement)
+
+Add color-wise inventory management for products.
+
+Expected Behavior:
+
+Each product color variant should have its own stock quantity.
+
+Example:
+
+Red → 10 units
+
+Blue → 5 units
+
+Black → 0 units (Out of Stock)
+
+Stock should:
+
+Reduce based on purchase of that specific color
+
+Reflect correct availability on frontend
+
+This should work independently from size-based inventory (if size inventory exists).
+
+5️⃣ Referral Tracking – Influencer / Referrer Stats (Critical Feature)
+
+For users who share referral links:
+
+The “My Stats” / Influencer Dashboard must show:
+
+Total users joined via their referral link
+
+Clear count of successful sign-ups
+
+Expected Behavior:
+
+Every new user who joins using a referral link should be:
+
+Linked to the referrer
+
+Counted accurately in referrer’s stats
+
+Real-time or near real-time update in:
+
+“My Stats”
+
+Referral summary section

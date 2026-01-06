@@ -487,7 +487,7 @@ router.post('/reviews', async (req: AuthRequest, res: Response) => {
 
     // Verify that the user owns the order
     const order = await Order.findById(orderId);
-    if (!order || order.userId.toString() !== req.userId.toString()) {
+    if (!order || !req.userId || order.userId.toString() !== req.userId.toString()) {
       return res.status(403).json({ message: 'Invalid order. You can only review products from your own orders.' });
     }
 
@@ -715,6 +715,102 @@ router.get('/stats', async (req: AuthRequest, res: Response) => {
       walletBalance: walletData?.balance || 0
     });
   } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========== COMMISSION INFO ==========
+router.get('/commission-info', async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const referredByUser = user.referredByUserId 
+      ? await User.findById(user.referredByUserId).select('name email referralCode')
+      : null;
+
+    const commissionTiers = [
+      { tier: 'Bronze', rate: 5, requirement: '0 successful referrals' },
+      { tier: 'Silver', rate: 7, requirement: '5+ successful referrals' },
+      { tier: 'Gold', rate: 10, requirement: '15+ successful referrals' },
+      { tier: 'Platinum', rate: 12, requirement: '30+ successful referrals' },
+      { tier: 'Diamond', rate: 15, requirement: '50+ successful referrals' },
+    ];
+
+    const successfulReferrals = await Referral.countDocuments({ 
+      referrerId: user._id, 
+      status: 'converted' 
+    });
+
+    let currentTier = 'Bronze';
+    let currentRate = 5;
+    if (successfulReferrals >= 50) { currentTier = 'Diamond'; currentRate = 15; }
+    else if (successfulReferrals >= 30) { currentTier = 'Platinum'; currentRate = 12; }
+    else if (successfulReferrals >= 15) { currentTier = 'Gold'; currentRate = 10; }
+    else if (successfulReferrals >= 5) { currentTier = 'Silver'; currentRate = 7; }
+
+    const totalCommissionEarned = await Referral.aggregate([
+      { $match: { referrerId: user._id, commissionStatus: 'credited' } },
+      { $group: { _id: null, total: { $sum: '$commissionAmount' } } }
+    ]);
+
+    const pendingCommission = await Referral.aggregate([
+      { $match: { referrerId: user._id, commissionStatus: 'pending', status: 'converted' } },
+      { $group: { _id: null, total: { $sum: '$commissionAmount' } } }
+    ]);
+
+    res.json({
+      referredBy: user.referredBy || null,
+      referredByUser: referredByUser ? {
+        name: referredByUser.name,
+        email: referredByUser.email
+      } : null,
+      currentTier,
+      currentRate,
+      successfulReferrals,
+      totalCommissionEarned: totalCommissionEarned[0]?.total || 0,
+      pendingCommission: pendingCommission[0]?.total || 0,
+      commissionTiers
+    });
+  } catch (error) {
+    console.error('Failed to get commission info:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========== REFERRER STATS (My Stats) ==========
+router.get('/referrer-stats', async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const totalUsersJoined = await Referral.countDocuments({ referrerId: user._id });
+    const pendingReferrals = await Referral.countDocuments({ referrerId: user._id, status: 'pending' });
+    const successfulReferrals = await Referral.countDocuments({ referrerId: user._id, status: 'converted' });
+
+    const recentJoins = await Referral.find({ referrerId: user._id })
+      .populate('referredUserId', 'name email createdAt')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    const joinHistory = recentJoins.map(ref => ({
+      _id: ref._id,
+      name: (ref.referredUserId as any)?.name || 'Unknown',
+      email: (ref.referredUserId as any)?.email || 'Unknown',
+      joinedAt: ref.createdAt,
+      status: ref.status
+    }));
+
+    res.json({
+      totalUsersJoined,
+      pendingReferrals,
+      successfulReferrals,
+      referralCode: user.referralCode,
+      referralLink: `https://shribalaji.com?ref=${user.referralCode}`,
+      joinHistory
+    });
+  } catch (error) {
+    console.error('Failed to get referrer stats:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
