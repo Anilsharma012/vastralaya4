@@ -43,25 +43,31 @@ export default function CommissionPage() {
     try {
       const influencer = await api.get<any>('/user/influencer');
       if (!influencer || influencer.status !== 'approved') {
-        toast({
-          title: 'Not an Influencer',
-          description: 'You need to be an approved influencer to view commission',
-          variant: 'destructive'
-        });
+        setCommission(null);
+        setPayouts([]);
+        setIsLoading(false);
         return;
       }
 
-      const earnings = await api.get<{ payouts: Payout[], monthlyEarnings: any[], commission: any }>('/influencer/earnings');
+      const earnings = await api.get<{ payouts: Payout[], monthlyEarnings: any[], commission: any }>('/influencer/earnings').catch(() => null);
       
-      setCommission(earnings?.commission);
-      setPayouts(earnings?.payouts || []);
+      if (earnings?.commission) {
+        setCommission(earnings.commission);
+        setPayouts(earnings.payouts || []);
+      } else {
+        setCommission({
+          rate: influencer?.commission?.rate || 5,
+          pendingAmount: 0,
+          availableAmount: 0,
+          paidAmount: 0,
+          totalEarned: 0
+        });
+        setPayouts([]);
+      }
     } catch (error) {
       console.error('Failed to load commission data:', error);
-      toast({
-        title: 'Failed to load commission data',
-        description: 'Please try again later',
-        variant: 'destructive'
-      });
+      setCommission(null);
+      setPayouts([]);
     } finally {
       setIsLoading(false);
     }

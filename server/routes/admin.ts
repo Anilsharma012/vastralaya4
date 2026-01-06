@@ -945,14 +945,58 @@ router.get('/transactions', async (req, res: Response) => {
 // ========== REFERRALS ==========
 router.get('/referrals', async (req, res: Response) => {
   try {
-    const referrals = await Referral.find()
-      .populate('referrerId', 'name email')
-      .populate('referredId', 'name email')
-      .populate('orderId', 'orderNumber total')
+    const { status } = req.query;
+    const query: any = {};
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+    
+    const referrals = await Referral.find(query)
+      .populate('referredUserId', 'name email createdAt')
+      .populate('orderId', 'orderId total orderStatus')
       .sort({ createdAt: -1 });
-    res.json({ referrals });
+    
+    const populatedReferrals = await Promise.all(referrals.map(async (ref) => {
+      let referrer: { name: string; email: string; type: string } | null = null;
+      if (ref.referrerType === 'influencer') {
+        const influencer = await Influencer.findOne({ userId: ref.referrerId });
+        if (influencer) {
+          referrer = { name: influencer.name, email: influencer.email, type: 'influencer' };
+        }
+      } else {
+        const user = await User.findById(ref.referrerId).select('name email');
+        if (user) {
+          referrer = { name: user.name, email: user.email, type: 'user' };
+        }
+      }
+      return {
+        _id: ref._id,
+        referrer,
+        referredUser: ref.referredUserId,
+        referralCode: ref.referralCode,
+        order: ref.orderId,
+        orderAmount: ref.orderAmount,
+        commissionAmount: ref.commissionAmount,
+        status: ref.status,
+        commissionStatus: ref.commissionStatus,
+        createdAt: ref.createdAt
+      };
+    }));
+    
+    const stats = {
+      total: await Referral.countDocuments(),
+      converted: await Referral.countDocuments({ status: 'converted' }),
+      pending: await Referral.countDocuments({ status: 'pending' }),
+      totalCommission: (await Referral.aggregate([
+        { $match: { commissionStatus: 'credited' } },
+        { $group: { _id: null, total: { $sum: '$commissionAmount' } } }
+      ]))[0]?.total || 0
+    };
+    
+    res.json({ referrals: populatedReferrals, stats });
   } catch (error) {
-    res.json({ referrals: [] });
+    console.error('Admin referrals error:', error);
+    res.json({ referrals: [], stats: { total: 0, converted: 0, pending: 0, totalCommission: 0 } });
   }
 });
 

@@ -82,8 +82,9 @@ export default function InfluencerStatsPage() {
         return;
       }
 
-      const [referralsData, ordersData, earningsData] = await Promise.all([
-        api.get<{ referrals: Referral[] }>('/user/referrals').catch(() => ({ referrals: [] })),
+      const [dashboardData, referralsData, ordersData, earningsData] = await Promise.all([
+        api.get<{ stats: any, recentReferrals: any[] }>('/influencer/dashboard').catch(() => null),
+        api.get<{ referrals: Referral[] }>('/influencer/referrals').catch(() => ({ referrals: [] })),
         api.get<{ orders: Order[] }>('/influencer/orders').catch(() => ({ orders: [] })),
         api.get<{ payouts: Payout[], monthlyEarnings: any[], commission: any }>('/influencer/earnings').catch(() => ({ payouts: [], monthlyEarnings: [], commission: {} }))
       ]);
@@ -92,28 +93,25 @@ export default function InfluencerStatsPage() {
       setOrders(ordersData?.orders || []);
       setPayouts(earningsData?.payouts || []);
 
-      // Calculate stats from fetched data
-      const totalReferrals = referralsData?.referrals?.length || 0;
-      const totalOrders = ordersData?.orders?.length || 0;
-      const totalSales = ordersData?.orders?.reduce((sum: number, order: Order) => sum + order.total, 0) || 0;
+      const dashStats = dashboardData?.stats || {};
       
       const calculatedStats: Stats = {
-        totalReferrals,
-        monthlyReferrals: totalReferrals > 0 ? Math.floor(totalReferrals / 1) : 0,
-        weeklyReferrals: totalReferrals > 0 ? Math.floor(totalReferrals / 4) : 0,
-        totalOrders,
-        monthlyOrders: totalOrders > 0 ? Math.floor(totalOrders / 1) : 0,
-        totalSales,
-        monthlySales: totalSales > 0 ? Math.floor(totalSales / 1) : 0,
-        pendingPayouts: payouts?.filter(p => p.status === 'pending').length || 0,
-        rate: influencer?.commission?.rate || 5,
-        pendingAmount: influencer?.commission?.pendingAmount || 0,
-        availableAmount: influencer?.commission?.availableAmount || 0,
-        paidAmount: influencer?.commission?.paidAmount || 0,
-        totalEarned: influencer?.commission?.totalEarned || 0,
-        tier: influencer?.tier || 'bronze',
-        referralCode: influencer?.referralCode || '',
-        referralLink: influencer?.referralLink || ''
+        totalReferrals: dashStats.totalReferrals ?? 0,
+        monthlyReferrals: dashStats.monthlyReferrals ?? 0,
+        weeklyReferrals: dashStats.weeklyReferrals ?? 0,
+        totalOrders: dashStats.totalOrders ?? 0,
+        monthlyOrders: dashStats.monthlyOrders ?? 0,
+        totalSales: dashStats.totalSales ?? 0,
+        monthlySales: dashStats.monthlySales ?? 0,
+        pendingPayouts: dashStats.pendingPayouts ?? 0,
+        rate: dashStats.rate ?? influencer?.commission?.rate ?? 5,
+        pendingAmount: dashStats.pendingAmount ?? 0,
+        availableAmount: dashStats.availableAmount ?? 0,
+        paidAmount: dashStats.paidAmount ?? 0,
+        totalEarned: dashStats.totalEarned ?? 0,
+        tier: dashStats.tier ?? influencer?.tier ?? 'bronze',
+        referralCode: dashStats.referralCode ?? influencer?.referralCode ?? '',
+        referralLink: dashStats.referralLink ?? influencer?.referralLink ?? ''
       };
 
       setStats(calculatedStats);

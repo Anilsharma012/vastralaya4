@@ -169,9 +169,42 @@ router.post('/orders', async (req: AuthRequest, res: Response) => {
     
     await order.save();
     
+    // Convert referral to 'converted' status on first order
+    const user = await User.findById(req.userId);
+    if (user?.referredBy) {
+      const pendingReferral = await Referral.findOne({
+        referredUserId: req.userId,
+        status: 'pending'
+      });
+      
+      if (pendingReferral) {
+        let commissionRate = 5;
+        if (pendingReferral.referrerType === 'influencer') {
+          const influencer = await Influencer.findOne({ userId: pendingReferral.referrerId });
+          if (influencer) {
+            commissionRate = influencer.commission?.rate || 5;
+          }
+        } else {
+          const referrerUser = await User.findById(pendingReferral.referrerId);
+          if (referrerUser) {
+            commissionRate = referrerUser.commissionRate || 5;
+          }
+        }
+        
+        const commissionAmount = Math.round(order.total * (commissionRate / 100));
+        
+        pendingReferral.status = 'converted';
+        pendingReferral.orderId = order._id;
+        pendingReferral.orderAmount = order.total;
+        pendingReferral.commissionAmount = commissionAmount;
+        pendingReferral.commissionStatus = 'pending';
+        pendingReferral.convertedAt = new Date();
+        await pendingReferral.save();
+      }
+    }
+    
     // Send order placed email
     if (!order.orderPlacedEmailSent) {
-      const user = await User.findById(req.userId);
       if (user) {
         sendOrderPlacedEmail(user.email, order).then(async (sent) => {
           if (sent) {

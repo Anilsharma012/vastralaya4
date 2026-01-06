@@ -215,6 +215,13 @@ For refunds:
   - Duplicate prevention flags on Order model (orderPlacedEmailSent, shippedEmailSent, deliveredEmailSent)
   - Async email sending to not block API responses
   - Environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS (secret)
+- **Referral Data Integrity**:
+  - Referral records created at user registration (status: pending)
+  - Referral auto-converted to 'converted' on first order placement by referred user
+  - Commission calculated based on referrer's tier rate at order time
+  - Influencer dashboard stats fetched from Referral model aggregations (not placeholder zeros)
+  - Admin Referrals page shows all referrals with referrer/referred user details, order info, and commission amounts
+  - Stats dashboard in Admin Referrals shows total referrals, pending, converted, and monthly conversions
 - Admin credentials: admin@shribalaji.com / Admin@123
 
 ## Influencer Dashboard Access

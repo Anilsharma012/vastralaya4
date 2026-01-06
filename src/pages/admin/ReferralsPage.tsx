@@ -9,18 +9,27 @@ import { api } from "@/lib/api";
 
 interface Referral {
   _id: string;
-  referrerId: { _id: string; name: string; email: string };
-  referredId: { _id: string; name: string; email: string };
+  referrer: { name: string; email: string; type: string } | null;
+  referredUser: { _id: string; name: string; email: string; createdAt: string } | null;
   referralCode: string;
-  status: "pending" | "completed" | "expired";
-  orderId?: { _id: string; orderNumber: string; total: number };
-  commission: number;
+  status: "pending" | "converted" | "expired";
+  order?: { _id: string; orderId: string; total: number; orderStatus: string } | null;
+  orderAmount?: number;
+  commissionAmount?: number;
+  commissionStatus?: string;
   createdAt: string;
-  convertedAt?: string;
+}
+
+interface Stats {
+  total: number;
+  converted: number;
+  pending: number;
+  totalCommission: number;
 }
 
 const ReferralsPage = () => {
   const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [stats, setStats] = useState<Stats>({ total: 0, converted: 0, pending: 0, totalCommission: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -28,12 +37,13 @@ const ReferralsPage = () => {
 
   useEffect(() => {
     loadReferrals();
-  }, []);
+  }, [statusFilter]);
 
   const loadReferrals = async () => {
     try {
-      const data = await api.get<{ referrals: Referral[] }>('/admin/referrals');
+      const data = await api.get<{ referrals: Referral[]; stats: Stats }>(`/admin/referrals?status=${statusFilter}`);
       setReferrals(data.referrals || []);
+      setStats(data.stats || { total: 0, converted: 0, pending: 0, totalCommission: 0 });
     } catch (error) {
       setReferrals([]);
     } finally {
@@ -42,19 +52,11 @@ const ReferralsPage = () => {
   };
 
   const filteredReferrals = referrals.filter(r => {
-    const matchSearch = r.referrerId?.name?.toLowerCase().includes(search.toLowerCase()) ||
-                       r.referredId?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    const matchSearch = r.referrer?.name?.toLowerCase().includes(search.toLowerCase()) ||
+                       r.referredUser?.name?.toLowerCase().includes(search.toLowerCase()) ||
                        r.referralCode?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || r.status === statusFilter;
-    return matchSearch && matchStatus;
+    return matchSearch;
   });
-
-  const stats = {
-    total: referrals.length,
-    completed: referrals.filter(r => r.status === "completed").length,
-    pending: referrals.filter(r => r.status === "pending").length,
-    totalCommission: referrals.filter(r => r.status === "completed").reduce((sum, r) => sum + (r.commission || 0), 0)
-  };
 
   if (isLoading) {
     return <div className="p-6">Loading referrals...</div>;
@@ -84,7 +86,7 @@ const ReferralsPage = () => {
               <TrendingUp className="h-5 w-5 text-green-600" />
               <div>
                 <div className="text-sm text-muted-foreground">Converted</div>
-                <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+                <div className="text-2xl font-bold text-green-600">{stats.converted}</div>
               </div>
             </div>
           </CardContent>
@@ -126,7 +128,7 @@ const ReferralsPage = () => {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="converted">Converted</SelectItem>
             <SelectItem value="expired">Expired</SelectItem>
           </SelectContent>
         </Select>
@@ -156,30 +158,35 @@ const ReferralsPage = () => {
               filteredReferrals.map((referral) => (
                 <tr key={referral._id} className="border-t" data-testid={`row-referral-${referral._id}`}>
                   <td className="p-3">
-                    <div className="font-medium">{referral.referrerId?.name || "Unknown"}</div>
-                    <div className="text-xs text-muted-foreground">{referral.referrerId?.email}</div>
+                    <div className="font-medium">{referral.referrer?.name || "Unknown"}</div>
+                    <div className="text-xs text-muted-foreground">{referral.referrer?.email}</div>
+                    {referral.referrer?.type && (
+                      <Badge variant="outline" className="mt-1 text-xs">
+                        {referral.referrer.type}
+                      </Badge>
+                    )}
                   </td>
                   <td className="p-3">
-                    <div className="font-medium">{referral.referredId?.name || "Unknown"}</div>
-                    <div className="text-xs text-muted-foreground">{referral.referredId?.email}</div>
+                    <div className="font-medium">{referral.referredUser?.name || "Unknown"}</div>
+                    <div className="text-xs text-muted-foreground">{referral.referredUser?.email}</div>
                   </td>
                   <td className="p-3 font-mono text-sm">{referral.referralCode}</td>
                   <td className="p-3">
-                    {referral.orderId ? (
+                    {referral.order ? (
                       <div>
-                        <div className="font-mono text-sm">{referral.orderId.orderNumber}</div>
-                        <div className="text-xs text-muted-foreground">₹{referral.orderId.total}</div>
+                        <div className="font-mono text-sm">{referral.order.orderId}</div>
+                        <div className="text-xs text-muted-foreground">₹{referral.order.total?.toLocaleString()}</div>
                       </div>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
                   </td>
                   <td className="p-3 text-right font-bold">
-                    {referral.commission ? `₹${referral.commission}` : "-"}
+                    {referral.commissionAmount ? `₹${referral.commissionAmount.toLocaleString()}` : "-"}
                   </td>
                   <td className="p-3 text-center">
                     <Badge variant={
-                      referral.status === "completed" ? "default" :
+                      referral.status === "converted" ? "default" :
                       referral.status === "pending" ? "secondary" : "destructive"
                     }>
                       {referral.status}

@@ -115,55 +115,93 @@ router.get('/dashboard', verifyInfluencer, async (req: any, res: Response) => {
     
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const referralQuery = { 
+      referralCode: influencer.referralCode,
+      referrerType: 'influencer'
+    };
     
     const [
       totalReferrals,
       monthlyReferrals,
       weeklyReferrals,
-      totalOrders,
-      monthlyOrders,
-      pendingPayouts,
+      convertedReferrals,
       recentReferrals
     ] = await Promise.all([
-      Referral.countDocuments({ referrerId: influencer.userId }),
-      Referral.countDocuments({ referrerId: influencer.userId, createdAt: { $gte: startOfMonth } }),
-      Referral.countDocuments({ referrerId: influencer.userId, createdAt: { $gte: startOfWeek } }),
-      Order.countDocuments({ influencerId: influencer._id, orderStatus: { $ne: 'cancelled' } }),
-      Order.countDocuments({ influencerId: influencer._id, createdAt: { $gte: startOfMonth }, orderStatus: { $ne: 'cancelled' } }),
-      Payout.countDocuments({ influencerId: influencer._id, status: 'pending' }),
-      Referral.find({ referrerId: influencer.userId })
-        .populate('referredId', 'name email')
+      Referral.countDocuments(referralQuery),
+      Referral.countDocuments({ ...referralQuery, createdAt: { $gte: startOfMonth } }),
+      Referral.countDocuments({ ...referralQuery, createdAt: { $gte: startOfWeek } }),
+      Referral.countDocuments({ ...referralQuery, status: 'converted' }),
+      Referral.find(referralQuery)
+        .populate('referredUserId', 'name email createdAt')
+        .populate('orderId', 'orderId total orderStatus')
         .sort({ createdAt: -1 })
         .limit(10)
     ]);
     
-    const totalSales = await Order.aggregate([
-      { $match: { influencerId: influencer._id, orderStatus: { $ne: 'cancelled' } } },
-      { $group: { _id: null, total: { $sum: '$total' } } }
+    const ordersFromReferrals = await Referral.find({ ...referralQuery, orderId: { $exists: true } });
+    const orderIds = ordersFromReferrals.map(r => r.orderId);
+    
+    const totalOrders = orderIds.length;
+    const monthlyOrders = ordersFromReferrals.filter(r => r.createdAt >= startOfMonth).length;
+    
+    const totalSalesAgg = await Referral.aggregate([
+      { $match: { ...referralQuery, status: 'converted' } },
+      { $group: { _id: null, total: { $sum: '$orderAmount' } } }
     ]);
     
-    const monthlySales = await Order.aggregate([
-      { $match: { influencerId: influencer._id, createdAt: { $gte: startOfMonth }, orderStatus: { $ne: 'cancelled' } } },
-      { $group: { _id: null, total: { $sum: '$total' } } }
+    const monthlySalesAgg = await Referral.aggregate([
+      { $match: { ...referralQuery, status: 'converted', createdAt: { $gte: startOfMonth } } },
+      { $group: { _id: null, total: { $sum: '$orderAmount' } } }
     ]);
+    
+    const totalCommissionAgg = await Referral.aggregate([
+      { $match: { ...referralQuery, commissionStatus: 'credited' } },
+      { $group: { _id: null, total: { $sum: '$commissionAmount' } } }
+    ]);
+    
+    const pendingCommissionAgg = await Referral.aggregate([
+      { $match: { ...referralQuery, status: 'converted', commissionStatus: 'pending' } },
+      { $group: { _id: null, total: { $sum: '$commissionAmount' } } }
+    ]);
+    
+    const pendingPayouts = await Payout.countDocuments({ influencerId: influencer._id, status: 'pending' });
+    
+    let wallet = await Wallet.findOne({ userId: influencer.userId });
+    const availableBalance = wallet?.balance || 0;
     
     res.json({
       stats: {
         totalReferrals,
         monthlyReferrals,
         weeklyReferrals,
+        convertedReferrals,
         totalOrders,
         monthlyOrders,
-        totalSales: totalSales[0]?.total || 0,
-        monthlySales: monthlySales[0]?.total || 0,
+        totalSales: totalSalesAgg[0]?.total || 0,
+        monthlySales: monthlySalesAgg[0]?.total || 0,
         pendingPayouts,
-        ...influencer.commission,
+        totalEarned: totalCommissionAgg[0]?.total || 0,
+        pendingAmount: pendingCommissionAgg[0]?.total || 0,
+        availableAmount: availableBalance,
+        paidAmount: influencer.commission?.paidAmount || 0,
+        rate: influencer.commission?.rate || 5,
         tier: influencer.tier,
         referralCode: influencer.referralCode,
-        referralLink: influencer.referralLink
+        referralLink: influencer.referralLink || `${process.env.FRONTEND_URL || 'https://shreebalajivastralya.com'}/?ref=${influencer.referralCode}`
       },
-      recentReferrals
+      recentReferrals: recentReferrals.map(r => ({
+        _id: r._id,
+        referredUser: r.referredUserId,
+        order: r.orderId,
+        commission: r.commissionAmount,
+        status: r.status,
+        commissionStatus: r.commissionStatus,
+        createdAt: r.createdAt
+      }))
     });
   } catch (error) {
     console.error('Dashboard error:', error);
@@ -178,14 +216,27 @@ router.get('/referrals', verifyInfluencer, async (req: any, res: Response) => {
       return res.status(404).json({ message: 'Influencer not found' });
     }
     
-    const referrals = await Referral.find({ referrerId: influencer.userId })
-      .populate('referredId', 'name email createdAt')
+    const referrals = await Referral.find({ 
+      referralCode: influencer.referralCode,
+      referrerType: 'influencer'
+    })
+      .populate('referredUserId', 'name email createdAt')
       .populate('orderId', 'orderId total orderStatus')
       .sort({ createdAt: -1 });
     
-    res.json({ referrals });
+    res.json({ 
+      referrals: referrals.map(r => ({
+        _id: r._id,
+        referredId: r.referredUserId,
+        orderId: r.orderId,
+        commission: r.commissionAmount,
+        status: r.status,
+        commissionStatus: r.commissionStatus,
+        createdAt: r.createdAt
+      }))
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', referrals: [] });
   }
 });
 
@@ -196,14 +247,28 @@ router.get('/orders', verifyInfluencer, async (req: any, res: Response) => {
       return res.status(404).json({ message: 'Influencer not found' });
     }
     
-    const orders = await Order.find({ influencerId: influencer._id })
-      .populate('userId', 'name email')
-      .select('orderId total orderStatus paymentStatus createdAt')
+    const referrals = await Referral.find({ 
+      referralCode: influencer.referralCode,
+      referrerType: 'influencer',
+      orderId: { $exists: true }
+    })
+      .populate({
+        path: 'orderId',
+        select: 'orderId total orderStatus paymentStatus createdAt',
+        populate: { path: 'userId', select: 'name email' }
+      })
       .sort({ createdAt: -1 });
+    
+    const orders = referrals
+      .filter(r => r.orderId)
+      .map(r => ({
+        ...(r.orderId as any)?.toObject?.() || r.orderId,
+        commission: r.commissionAmount
+      }));
     
     res.json({ orders });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', orders: [] });
   }
 });
 
@@ -214,14 +279,36 @@ router.get('/earnings', verifyInfluencer, async (req: any, res: Response) => {
       return res.status(404).json({ message: 'Influencer not found' });
     }
     
+    const referralQuery = {
+      referralCode: influencer.referralCode,
+      referrerType: 'influencer'
+    };
+    
     const payouts = await Payout.find({ influencerId: influencer._id })
       .sort({ createdAt: -1 });
     
-    const monthlyEarnings = await Order.aggregate([
+    const totalEarnedAgg = await Referral.aggregate([
+      { $match: { ...referralQuery, commissionStatus: 'credited' } },
+      { $group: { _id: null, total: { $sum: '$commissionAmount' } } }
+    ]);
+    
+    const pendingCommissionAgg = await Referral.aggregate([
+      { $match: { ...referralQuery, status: 'converted', commissionStatus: 'pending' } },
+      { $group: { _id: null, total: { $sum: '$commissionAmount' } } }
+    ]);
+    
+    const paidAmountAgg = await Payout.aggregate([
+      { $match: { influencerId: influencer._id, status: 'completed' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    
+    let wallet = await Wallet.findOne({ userId: influencer.userId });
+    
+    const monthlyEarnings = await Referral.aggregate([
       { 
         $match: { 
-          influencerId: influencer._id,
-          orderStatus: { $in: ['delivered'] }
+          ...referralQuery,
+          status: 'converted'
         }
       },
       {
@@ -230,7 +317,8 @@ router.get('/earnings', verifyInfluencer, async (req: any, res: Response) => {
             year: { $year: '$createdAt' },
             month: { $month: '$createdAt' }
           },
-          sales: { $sum: '$total' },
+          sales: { $sum: '$orderAmount' },
+          commission: { $sum: '$commissionAmount' },
           orders: { $sum: 1 }
         }
       },
@@ -239,17 +327,29 @@ router.get('/earnings', verifyInfluencer, async (req: any, res: Response) => {
     ]);
     
     res.json({
-      commission: influencer.commission,
+      commission: {
+        rate: influencer.commission?.rate || 5,
+        totalEarned: totalEarnedAgg[0]?.total || 0,
+        pendingAmount: pendingCommissionAgg[0]?.total || 0,
+        availableAmount: wallet?.balance || 0,
+        paidAmount: paidAmountAgg[0]?.total || 0
+      },
       payouts,
       monthlyEarnings: monthlyEarnings.map(item => ({
         month: `${item._id.year}-${String(item._id.month).padStart(2, '0')}`,
         sales: item.sales,
         orders: item.orders,
-        commission: item.sales * (influencer.commission.rate / 100)
+        commission: item.commission
       }))
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Earnings error:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      commission: { rate: 5, totalEarned: 0, pendingAmount: 0, availableAmount: 0, paidAmount: 0 },
+      payouts: [],
+      monthlyEarnings: []
+    });
   }
 });
 
