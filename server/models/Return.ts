@@ -21,6 +21,9 @@ export interface IReturn extends Document {
   refundMethod?: 'wallet' | 'original' | 'bank';
   refundStatus?: 'pending' | 'processing' | 'completed' | 'failed';
   refundId?: string;
+  bankAccountNumber?: string;
+  upiId?: string;
+  accountHolderName?: string;
   pickupAddress?: {
     name: string;
     phone: string;
@@ -67,6 +70,9 @@ const ReturnSchema = new Schema<IReturn>({
   refundMethod: { type: String, enum: ['wallet', 'original', 'bank'] },
   refundStatus: { type: String, enum: ['pending', 'processing', 'completed', 'failed'] },
   refundId: { type: String },
+  bankAccountNumber: { type: String },
+  upiId: { type: String },
+  accountHolderName: { type: String },
   pickupAddress: {
     name: { type: String },
     phone: { type: String },
