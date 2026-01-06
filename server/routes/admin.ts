@@ -1016,28 +1016,73 @@ router.put('/settings', async (req: AuthRequest, res: Response) => {
     let settings = await Settings.findOne();
     if (!settings) {
       settings = new Settings({});
+      await settings.save();
     }
     
     const { store, shipping, payments, referral, commission, rewards } = req.body;
-    if (store) settings.store = { ...settings.store, ...store };
-    if (shipping) settings.shipping = { ...settings.shipping, ...shipping };
-    if (payments) settings.payments = { ...settings.payments, ...payments };
-    if (referral) settings.referral = { ...settings.referral, ...referral };
-    if (commission) settings.commission = { ...settings.commission, ...commission };
-    if (rewards) settings.rewards = { ...settings.rewards, ...rewards };
     
-    settings.markModified('store');
-    settings.markModified('shipping');
-    settings.markModified('payments');
-    settings.markModified('referral');
-    settings.markModified('commission');
-    settings.markModified('rewards');
+    if (store) {
+      settings.set('store.name', store.name ?? settings.store.name);
+      settings.set('store.email', store.email ?? settings.store.email);
+      settings.set('store.phone', store.phone ?? settings.store.phone);
+      settings.set('store.address', store.address ?? settings.store.address);
+      settings.set('store.currency', store.currency ?? settings.store.currency);
+      settings.set('store.taxRate', store.taxRate ?? settings.store.taxRate);
+    }
+    
+    if (shipping) {
+      settings.set('shipping.freeShippingThreshold', shipping.freeShippingThreshold ?? settings.shipping.freeShippingThreshold);
+      settings.set('shipping.standardRate', shipping.standardRate ?? settings.shipping.standardRate);
+      settings.set('shipping.expressRate', shipping.expressRate ?? settings.shipping.expressRate);
+      settings.set('shipping.estimatedDays', shipping.estimatedDays ?? settings.shipping.estimatedDays);
+      settings.set('shipping.shiprocketEnabled', shipping.shiprocketEnabled ?? settings.shipping.shiprocketEnabled);
+      settings.set('shipping.shiprocketEmail', shipping.shiprocketEmail ?? settings.shipping.shiprocketEmail);
+      if (shipping.shiprocketPassword && shipping.shiprocketPassword !== '********') {
+        settings.set('shipping.shiprocketPassword', shipping.shiprocketPassword);
+      }
+      settings.set('shipping.shiprocketPickupLocation', shipping.shiprocketPickupLocation ?? settings.shipping.shiprocketPickupLocation);
+    }
+    
+    if (payments) {
+      settings.set('payments.codEnabled', payments.codEnabled ?? settings.payments.codEnabled);
+      settings.set('payments.onlineEnabled', payments.onlineEnabled ?? settings.payments.onlineEnabled);
+      settings.set('payments.razorpayEnabled', payments.razorpayEnabled ?? settings.payments.razorpayEnabled);
+      settings.set('payments.razorpayKeyId', payments.razorpayKeyId ?? settings.payments.razorpayKeyId);
+      if (payments.razorpayKeySecret && !payments.razorpayKeySecret.startsWith('••')) {
+        settings.set('payments.razorpayKeySecret', payments.razorpayKeySecret);
+      }
+      settings.set('payments.minOrderAmount', payments.minOrderAmount ?? settings.payments.minOrderAmount);
+    }
+    
+    if (referral) {
+      settings.set('referral.enabled', referral.enabled ?? settings.referral.enabled);
+      settings.set('referral.referrerReward', referral.referrerReward ?? settings.referral.referrerReward);
+      settings.set('referral.refereeDiscount', referral.refereeDiscount ?? settings.referral.refereeDiscount);
+      settings.set('referral.minOrderForReward', referral.minOrderForReward ?? settings.referral.minOrderForReward);
+    }
+    
+    if (commission) {
+      settings.set('commission.bronzeRate', commission.bronzeRate ?? settings.commission.bronzeRate);
+      settings.set('commission.silverRate', commission.silverRate ?? settings.commission.silverRate);
+      settings.set('commission.goldRate', commission.goldRate ?? settings.commission.goldRate);
+      settings.set('commission.platinumRate', commission.platinumRate ?? settings.commission.platinumRate);
+      settings.set('commission.diamondRate', commission.diamondRate ?? settings.commission.diamondRate);
+    }
+    
+    if (rewards) {
+      settings.set('rewards.enabled', rewards.enabled ?? settings.rewards.enabled);
+      settings.set('rewards.pointsPerRupee', rewards.pointsPerRupee ?? settings.rewards.pointsPerRupee);
+      settings.set('rewards.redeemRatio', rewards.redeemRatio ?? settings.rewards.redeemRatio);
+      settings.set('rewards.minRedeemPoints', rewards.minRedeemPoints ?? settings.rewards.minRedeemPoints);
+    }
     
     await settings.save();
-    res.json({ settings });
+    
+    const savedSettings = await Settings.findById(settings._id);
+    res.json({ settings: savedSettings, message: 'Settings saved successfully' });
   } catch (error) {
     console.error('Settings update error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Failed to save settings' });
   }
 });
 

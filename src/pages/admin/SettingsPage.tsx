@@ -106,12 +106,28 @@ const SettingsPage = () => {
 
   const loadSettings = async () => {
     try {
-      const data = await api.get<{ settings: Settings }>('/admin/settings');
+      const data = await api.get<{ settings: any }>('/admin/settings');
       if (data.settings) {
-        setSettings({ ...defaultSettings, ...data.settings });
+        const loadedSettings = {
+          store: { ...defaultSettings.store, ...data.settings.store },
+          shipping: { 
+            ...defaultSettings.shipping, 
+            ...data.settings.shipping,
+            shiprocketPassword: data.settings.shipping?.shiprocketPassword ? '********' : ''
+          },
+          payments: { 
+            ...defaultSettings.payments, 
+            ...data.settings.payments,
+            razorpayKeySecret: data.settings.payments?.razorpayKeySecret ? '••••••••••••••••' : ''
+          },
+          referral: { ...defaultSettings.referral, ...data.settings.referral },
+          commission: { ...defaultSettings.commission, ...data.settings.commission }
+        };
+        setSettings(loadedSettings);
       }
     } catch (error) {
       console.log('Using default settings');
+      toast({ title: 'Failed to load settings', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -120,10 +136,35 @@ const SettingsPage = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await api.put('/admin/settings', settings);
-      toast({ title: "Settings saved successfully" });
-    } catch (error) {
-      toast({ title: "Failed to save settings", variant: "destructive" });
+      const result = await api.put<{ settings: Settings; message: string }>('/admin/settings', settings);
+      toast({ 
+        title: "Settings Saved",
+        description: "All settings have been updated successfully."
+      });
+      if (result.settings) {
+        const loadedSettings = {
+          store: { ...defaultSettings.store, ...result.settings.store },
+          shipping: { 
+            ...defaultSettings.shipping, 
+            ...result.settings.shipping,
+            shiprocketPassword: (result.settings as any).shipping?.shiprocketPassword ? '********' : ''
+          },
+          payments: { 
+            ...defaultSettings.payments, 
+            ...result.settings.payments,
+            razorpayKeySecret: (result.settings as any).payments?.razorpayKeySecret ? '••••••••••••••••' : ''
+          },
+          referral: { ...defaultSettings.referral, ...result.settings.referral },
+          commission: { ...defaultSettings.commission, ...result.settings.commission }
+        };
+        setSettings(loadedSettings);
+      }
+    } catch (error: any) {
+      toast({ 
+        title: "Failed to save settings",
+        description: error.message || "Please try again later.",
+        variant: "destructive" 
+      });
     } finally {
       setIsSaving(false);
     }
