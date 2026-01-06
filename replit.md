@@ -182,6 +182,15 @@ For refunds:
 - **Commission Tier System**: 5-tier commission structure (Bronze 5%, Silver 7%, Gold 10%, Platinum 12%, Diamond 15%) based on successful referrals
 - **Commission Dashboard**: User dashboard displays current tier, commission rate, total earnings, pending commission, and tier progression
 - **Color-wise Stock Management**: Each product color variant has independent stock quantity tracking
+- **Enhanced Return System**: 
+  - User can return orders only within 72 hours of delivery
+  - Return window eligibility check with remaining hours display
+  - Mandatory return reason and refund details (Bank Account Number OR UPI ID)
+  - Optional account holder name
+  - UPI format validation
+  - Return request creates proper Return record with all details
+  - Admin sees bank/UPI details, delivered date, items, and reason in Returns page
+  - Status workflow: Pending → Approved/Rejected → Pickup Scheduled → Picked Up → Received → Inspecting → Refund Initiated → Refund Completed
 - Admin credentials: admin@shribalaji.com / Admin@123
 
 ## Influencer Dashboard Access
