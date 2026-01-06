@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import mongoose from 'mongoose';
-import { User, Order, Ticket, Wallet, Transaction, Address, Wishlist, Cart, Review, Influencer, Referral, Product } from '../models';
+import { User, Order, Ticket, Wallet, Transaction, Address, Wishlist, Cart, Review, Influencer, Referral, Product, Return } from '../models';
 import { verifyToken, AuthRequest } from '../middleware/auth';
 
 const router = Router();
@@ -184,10 +184,106 @@ router.post('/orders/:id/return', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'Only delivered orders can be returned' });
     }
     
-    order.returnReason = req.body.reason || 'Return requested by customer';
+    if (!order.deliveredAt) {
+      return res.status(400).json({ message: 'Delivery date not recorded. Please contact support.' });
+    }
+    
+    const deliveredTime = new Date(order.deliveredAt).getTime();
+    const now = Date.now();
+    const hoursSinceDelivery = (now - deliveredTime) / (1000 * 60 * 60);
+    
+    if (hoursSinceDelivery > 72) {
+      return res.status(400).json({ message: 'Return window expired. Returns are only allowed within 3 days of delivery.' });
+    }
+    
+    const { reason, items, bankAccountNumber, upiId, accountHolderName } = req.body;
+    
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Return reason is required' });
+    }
+    
+    if (!bankAccountNumber && !upiId) {
+      return res.status(400).json({ message: 'Bank account number or UPI ID is required for refund' });
+    }
+    
+    if (upiId && !/^[\w.-]+@[\w]+$/.test(upiId)) {
+      return res.status(400).json({ message: 'Invalid UPI ID format (e.g., name@upi)' });
+    }
+    
+    const existingReturn = await Return.findOne({ orderId: order._id, userId: req.userId });
+    if (existingReturn) {
+      return res.status(400).json({ message: 'Return request already exists for this order' });
+    }
+    
+    const returnId = 'RTN' + Date.now().toString(36).toUpperCase();
+    
+    let returnItems = [];
+    if (items && items.length > 0) {
+      returnItems = items.map((item: any) => ({
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        reason: item.reason || reason
+      }));
+    } else {
+      returnItems = order.items.map((item: any) => ({
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        reason: reason
+      }));
+    }
+    
+    const refundAmount = returnItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    
+    const returnRequest = new Return({
+      orderId: order._id,
+      userId: req.userId,
+      returnId,
+      items: returnItems,
+      status: 'pending',
+      type: 'return',
+      reason,
+      refundAmount,
+      refundMethod: 'bank',
+      refundStatus: 'pending',
+      bankAccountNumber,
+      upiId,
+      accountHolderName,
+      pickupAddress: order.shippingAddress
+    });
+    
+    await returnRequest.save();
+    
+    order.returnReason = reason;
     await order.save();
     
-    res.json({ message: 'Return request submitted', order });
+    res.status(201).json({ message: 'Return request submitted successfully', return: returnRequest });
+  } catch (error) {
+    console.error('Return request error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/returns', async (req: AuthRequest, res: Response) => {
+  try {
+    const returns = await Return.find({ userId: req.userId })
+      .populate('orderId', 'orderId total orderStatus deliveredAt')
+      .sort({ createdAt: -1 });
+    res.json({ returns });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/returns/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const returnReq = await Return.findOne({ _id: req.params.id, userId: req.userId })
+      .populate('orderId', 'orderId total orderStatus deliveredAt shippingAddress');
+    if (!returnReq) return res.status(404).json({ message: 'Return request not found' });
+    res.json({ return: returnReq });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
