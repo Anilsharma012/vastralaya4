@@ -161,9 +161,41 @@ const CheckoutPage = () => {
     }
   };
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window !== 'undefined' && (window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      
+      const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (existingScript) {
+        existingScript.addEventListener('load', () => resolve(true));
+        existingScript.addEventListener('error', () => resolve(false));
+        if ((window as any).Razorpay) {
+          resolve(true);
+        }
+        return;
+      }
+      
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const initiateRazorpayPayment = async (orderId: string, amount: number) => {
     if (!paymentSettings.razorpayKeyId) {
       toast({ title: 'Online payment not configured', variant: 'destructive' });
+      return false;
+    }
+
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded || typeof (window as any).Razorpay !== 'function') {
+      toast({ title: 'Payment gateway failed to load. Please refresh and try again.', variant: 'destructive' });
       return false;
     }
 
@@ -201,8 +233,14 @@ const CheckoutPage = () => {
         }
       };
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      try {
+        const razorpay = new (window as any).Razorpay(options);
+        razorpay.open();
+      } catch (error) {
+        console.error('Razorpay init error:', error);
+        toast({ title: 'Failed to open payment gateway', variant: 'destructive' });
+        resolve(false);
+      }
     });
   };
 
