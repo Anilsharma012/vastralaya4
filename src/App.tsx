@@ -33,6 +33,7 @@ import AdminPayoutsPage from "./pages/admin/PayoutsPage";
 import AdminReferralsPage from "./pages/admin/ReferralsPage";
 import AdminSettingsPage from "./pages/admin/SettingsPage";
 import AdminAuditLogsPage from "./pages/admin/AuditLogsPage";
+import AdminEmailLogsPage from "./pages/admin/EmailLogsPage";
 import AdminPagesPage from "./pages/admin/PagesPage";
 import AdminFAQPage from "./pages/admin/FAQPage";
 import AdminAnnouncementsPage from "./pages/admin/AnnouncementsPage";
@@ -156,6 +157,7 @@ const App = () => (
               <Route path="faqs" element={<AdminFAQPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+              <Route path="email-logs" element={<AdminEmailLogsPage />} />
               <Route path="analytics" element={<AdminAnalyticsPage />} />
               <Route path="social-media" element={<AdminSocialMediaVideosPage />} />
             </Route>

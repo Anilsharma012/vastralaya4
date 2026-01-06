@@ -50,6 +50,11 @@ export interface IOrder extends Document {
   cancelReason?: string;
   returnReason?: string;
   deliveredAt?: Date;
+  courierName?: string;
+  expectedDelivery?: string;
+  orderPlacedEmailSent?: boolean;
+  shippedEmailSent?: boolean;
+  deliveredEmailSent?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -99,6 +104,11 @@ const OrderSchema = new Schema<IOrder>({
   cancelReason: { type: String },
   returnReason: { type: String },
   deliveredAt: { type: Date },
+  courierName: { type: String },
+  expectedDelivery: { type: String },
+  orderPlacedEmailSent: { type: Boolean, default: false },
+  shippedEmailSent: { type: Boolean, default: false },
+  deliveredEmailSent: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export default mongoose.model<IOrder>('Order', OrderSchema);

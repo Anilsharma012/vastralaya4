@@ -39,7 +39,8 @@ import {
   TrendingUp,
   Award,
   History,
-  Video
+  Video,
+  Mail
 } from 'lucide-react';
 
 interface SidebarSection {
@@ -120,6 +121,7 @@ const sidebarSections: SidebarSection[] = [
     items: [
       { icon: Settings, label: 'Settings', path: '/admin/settings' },
       { icon: ClipboardList, label: 'Audit Logs', path: '/admin/audit-logs' },
+      { icon: Mail, label: 'Email Logs', path: '/admin/email-logs' },
       { icon: Activity, label: 'Analytics', path: '/admin/analytics' },
     ]
   }

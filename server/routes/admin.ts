@@ -1,7 +1,8 @@
 import { Router, Response } from 'express';
 import mongoose from 'mongoose';
-import { Category, Subcategory, Banner, User, Product, Order, Ticket, Influencer, Wallet, Transaction, Payout, Coupon, Review, Page, Settings, AuditLog, FAQ, Announcement, Media, Attribute, Referral, SocialMediaPost, ShiprocketOrder, Return } from '../models';
+import { Category, Subcategory, Banner, User, Product, Order, Ticket, Influencer, Wallet, Transaction, Payout, Coupon, Review, Page, Settings, AuditLog, FAQ, Announcement, Media, Attribute, Referral, SocialMediaPost, ShiprocketOrder, Return, EmailLog } from '../models';
 import { verifyAdmin, AuthRequest } from '../middleware/auth';
+import { sendOrderShippedEmail, sendOrderDeliveredEmail } from '../services/emailService';
 
 const router = Router();
 
@@ -447,6 +448,8 @@ router.put('/orders/:id', async (req: AuthRequest, res: Response) => {
     const { orderStatus, paymentStatus, trackingNumber, trackingUrl, notes } = req.body;
     const previousPaymentStatus = order.paymentStatus;
     
+    const previousStatus = order.orderStatus;
+    
     if (orderStatus) {
       order.orderStatus = orderStatus;
       if (orderStatus === 'delivered') order.deliveredAt = new Date();
@@ -455,8 +458,32 @@ router.put('/orders/:id', async (req: AuthRequest, res: Response) => {
     if (trackingNumber !== undefined) order.trackingNumber = trackingNumber;
     if (trackingUrl !== undefined) order.trackingUrl = trackingUrl;
     if (notes !== undefined) order.notes = notes;
+    if (req.body.courierName !== undefined) order.courierName = req.body.courierName;
+    if (req.body.expectedDelivery !== undefined) order.expectedDelivery = req.body.expectedDelivery;
     
     await order.save();
+    
+    // Send status emails
+    const user = await User.findById(order.userId);
+    if (user) {
+      if (orderStatus === 'shipped' && previousStatus !== 'shipped' && !order.shippedEmailSent) {
+        sendOrderShippedEmail(user.email, order).then(async (sent) => {
+          if (sent) {
+            order.shippedEmailSent = true;
+            await order.save();
+          }
+        }).catch(console.error);
+      }
+      
+      if (orderStatus === 'delivered' && previousStatus !== 'delivered' && !order.deliveredEmailSent) {
+        sendOrderDeliveredEmail(user.email, order).then(async (sent) => {
+          if (sent) {
+            order.deliveredEmailSent = true;
+            await order.save();
+          }
+        }).catch(console.error);
+      }
+    }
     
     if (paymentStatus === 'paid' && previousPaymentStatus !== 'paid') {
       let wallet = await Wallet.findOne({ userId: order.userId, userType: 'user' });
@@ -1591,6 +1618,64 @@ router.post('/upload-image', (req: AuthRequest, res: Response) => {
       res.status(500).json({ message: 'Failed to process upload' });
     }
   });
+});
+
+// ========== EMAIL LOGS ==========
+router.get('/email-logs', async (req, res: Response) => {
+  try {
+    const { page = 1, limit = 20, type, status, search } = req.query;
+    const query: any = {};
+    
+    if (type && type !== 'all') query.type = type;
+    if (status && status !== 'all') query.status = status;
+    if (search) {
+      query.$or = [
+        { to: { $regex: search, $options: 'i' } },
+        { subject: { $regex: search, $options: 'i' } },
+        { referenceId: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const skip = (Number(page) - 1) * Number(limit);
+    const [logs, total] = await Promise.all([
+      EmailLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+      EmailLog.countDocuments(query)
+    ]);
+    
+    res.json({ logs, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/email-logs/stats', async (req, res: Response) => {
+  try {
+    const [total, sent, failed, pending] = await Promise.all([
+      EmailLog.countDocuments(),
+      EmailLog.countDocuments({ status: 'sent' }),
+      EmailLog.countDocuments({ status: 'failed' }),
+      EmailLog.countDocuments({ status: 'pending' })
+    ]);
+    
+    res.json({ total, sent, failed, pending });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/email-logs/:id/retry', async (req, res: Response) => {
+  try {
+    const log = await EmailLog.findById(req.params.id);
+    if (!log) return res.status(404).json({ message: 'Log not found' });
+    
+    log.retryCount = (log.retryCount || 0) + 1;
+    log.status = 'pending';
+    await log.save();
+    
+    res.json({ message: 'Email queued for retry' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 export default router;

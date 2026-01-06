@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import mongoose from 'mongoose';
 import { User, Order, Ticket, Wallet, Transaction, Address, Wishlist, Cart, Review, Influencer, Referral, Product, Return } from '../models';
 import { verifyToken, AuthRequest } from '../middleware/auth';
+import { sendOrderPlacedEmail } from '../services/emailService';
 
 const router = Router();
 
@@ -167,6 +168,20 @@ router.post('/orders', async (req: AuthRequest, res: Response) => {
     });
     
     await order.save();
+    
+    // Send order placed email
+    if (!order.orderPlacedEmailSent) {
+      const user = await User.findById(req.userId);
+      if (user) {
+        sendOrderPlacedEmail(user.email, order).then(async (sent) => {
+          if (sent) {
+            order.orderPlacedEmailSent = true;
+            await order.save();
+          }
+        }).catch(console.error);
+      }
+    }
+    
     res.status(201).json(order);
   } catch (error) {
     console.error('Create order error:', error);
