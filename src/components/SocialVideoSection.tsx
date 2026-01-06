@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Eye, ChevronLeft, ChevronRight, Instagram, Youtube } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight, Instagram, Youtube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { storeInfo } from '@/data/products';
@@ -22,7 +22,6 @@ interface SocialMediaPost {
 const SocialVideoSection = () => {
   const [posts, setPosts] = useState<SocialMediaPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -30,28 +29,6 @@ const SocialVideoSection = () => {
     loadPosts();
   }, []);
 
-  useEffect(() => {
-    if (posts.length <= 1 || isPaused) return;
-    
-    const interval = setInterval(() => {
-      if (scrollRef.current) {
-        const container = scrollRef.current;
-        const cardWidth = container.firstElementChild?.clientWidth || 200;
-        const gap = 16;
-        const scrollAmount = cardWidth + gap;
-        
-        const maxScroll = container.scrollWidth - container.clientWidth;
-        
-        if (container.scrollLeft >= maxScroll - 10) {
-          container.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-        }
-      }
-    }, 3000);
-    
-    return () => clearInterval(interval);
-  }, [posts.length, isPaused]);
 
   const loadPosts = async () => {
     try {
@@ -172,8 +149,6 @@ const SocialVideoSection = () => {
               ref={scrollRef}
               className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-2 md:px-10"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
             >
               {posts.map((post) => (
                 <div 
@@ -183,14 +158,17 @@ const SocialVideoSection = () => {
                   data-testid={`card-video-${post._id}`}
                 >
                   <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-muted">
-                    <img 
-                      src={post.thumbnail} 
-                      alt={post.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      onError={(e) => (e.currentTarget.src = 'https://placehold.co/200x356?text=Video')}
+                    <video
+                      src={post.videoUrl}
+                      poster={post.thumbnail}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
                     />
                     
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
                     
                     <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
                       <Eye className="h-3 w-3" />
@@ -205,13 +183,7 @@ const SocialVideoSection = () => {
                       )}
                     </div>
                     
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                        <Play className="h-5 w-5 text-primary ml-1" fill="currentColor" />
-                      </div>
-                    </div>
-                    
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-none">
                       {post.linkedProduct && (
                         <div className="flex items-center gap-2 mb-2">
                           <img 
