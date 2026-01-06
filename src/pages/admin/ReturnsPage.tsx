@@ -14,7 +14,7 @@ import { api } from "@/lib/api";
 interface ReturnRequest {
   _id: string;
   returnId: string;
-  orderId: { _id: string; orderId: string; total: number; orderStatus: string };
+  orderId: { _id: string; orderId: string; total: number; orderStatus: string; deliveredAt?: string };
   userId: { _id: string; name: string; email: string; phone?: string };
   items: { productId: string; name: string; quantity: number; price: number; reason: string; images?: string[] }[];
   status: string;
@@ -25,6 +25,9 @@ interface ReturnRequest {
   refundAmount?: number;
   refundMethod?: string;
   refundStatus?: string;
+  bankAccountNumber?: string;
+  upiId?: string;
+  accountHolderName?: string;
   awbNumber?: string;
   courierName?: string;
   trackingUrl?: string;
@@ -211,6 +214,7 @@ const ReturnsPage = () => {
                   <p className="text-muted-foreground">Customer</p>
                   <p className="font-medium">{selectedReturn.userId?.name}</p>
                   <p className="text-xs">{selectedReturn.userId?.email}</p>
+                  {selectedReturn.userId?.phone && <p className="text-xs">{selectedReturn.userId.phone}</p>}
                 </div>
                 <div>
                   <p className="text-muted-foreground">Type</p>
@@ -219,6 +223,45 @@ const ReturnsPage = () => {
                 <div>
                   <p className="text-muted-foreground">Reason</p>
                   <p className="font-medium">{selectedReturn.reason}</p>
+                </div>
+                {selectedReturn.orderId?.deliveredAt && (
+                  <div>
+                    <p className="text-muted-foreground">Delivered On</p>
+                    <p className="font-medium">{new Date(selectedReturn.orderId.deliveredAt).toLocaleDateString()}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-muted-foreground">Requested On</p>
+                  <p className="font-medium">{new Date(selectedReturn.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+              
+              <div className="border p-4 rounded-lg bg-muted/30">
+                <h4 className="font-semibold mb-3">Refund Details (Customer Provided)</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {selectedReturn.bankAccountNumber && (
+                    <div>
+                      <p className="text-muted-foreground">Bank Account Number</p>
+                      <p className="font-medium font-mono">{selectedReturn.bankAccountNumber}</p>
+                    </div>
+                  )}
+                  {selectedReturn.upiId && (
+                    <div>
+                      <p className="text-muted-foreground">UPI ID</p>
+                      <p className="font-medium">{selectedReturn.upiId}</p>
+                    </div>
+                  )}
+                  {selectedReturn.accountHolderName && (
+                    <div>
+                      <p className="text-muted-foreground">Account Holder Name</p>
+                      <p className="font-medium">{selectedReturn.accountHolderName}</p>
+                    </div>
+                  )}
+                  {!selectedReturn.bankAccountNumber && !selectedReturn.upiId && (
+                    <div className="col-span-2 text-muted-foreground italic">
+                      No refund details provided by customer
+                    </div>
+                  )}
                 </div>
               </div>
 
