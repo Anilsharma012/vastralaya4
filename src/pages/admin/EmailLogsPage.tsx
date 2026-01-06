@@ -104,6 +104,7 @@ const EmailLogsPage = () => {
 
   const getTypeBadge = (type: string) => {
     const typeColors: Record<string, string> = {
+      signup_success: 'bg-teal-500',
       login_success: 'bg-blue-500',
       order_placed: 'bg-purple-500',
       order_shipped: 'bg-orange-500',
@@ -210,6 +211,7 @@ const EmailLogsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="signup_success">Signup Success</SelectItem>
                 <SelectItem value="login_success">Login Success</SelectItem>
                 <SelectItem value="order_placed">Order Placed</SelectItem>
                 <SelectItem value="order_shipped">Order Shipped</SelectItem>

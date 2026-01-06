@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { Admin, User, Referral, Influencer } from '../models';
 import { generateToken, AuthRequest, verifyToken, verifyAdmin } from '../middleware/auth';
-import { sendLoginEmail } from '../services/emailService';
+import { sendLoginEmail, sendSignupEmail } from '../services/emailService';
 
 const router = Router();
 
@@ -190,6 +190,12 @@ router.post('/user/register', async (req, res: Response) => {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
+    
+    sendSignupEmail({
+      email: user.email,
+      name: user.name,
+      referralCode: user.referralCode
+    }).catch(err => console.error('Failed to send signup email:', err));
     
     res.status(201).json({
       message: 'Registration successful',

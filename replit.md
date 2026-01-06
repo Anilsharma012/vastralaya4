@@ -205,6 +205,7 @@ For refunds:
 - **Email Notification System**:
   - Gmail SMTP integration using Nodemailer
   - Professional HTML email templates with store branding
+  - Signup Success emails (welcome message, account details, referral code)
   - Login Success emails (with security notice, timestamp, IP address)
   - Order Placed emails (order details, items, shipping address, payment method)
   - Order Shipped emails (tracking number, courier name, expected delivery date)

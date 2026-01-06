@@ -98,6 +98,43 @@ interface OrderData {
 }
 
 export const emailTemplates = {
+  signupSuccess: (userName: string, userEmail: string, referralCode: string) => ({
+    subject: `Welcome to ${storeInfo.name}! 🎉`,
+    html: baseTemplate(`
+      <h2 style="color: #1a237e; margin-top: 0;">Welcome, ${userName}! 🙏</h2>
+      <p style="font-size: 16px; color: #333;">Thank you for creating an account with us. We're thrilled to have you as part of our family!</p>
+      
+      <div class="order-box">
+        <h3 style="color: #1a237e; margin-top: 0;">Your Account Details</h3>
+        <table>
+          <tr>
+            <td><strong>Email:</strong></td>
+            <td>${userEmail}</td>
+          </tr>
+          <tr>
+            <td><strong>Your Referral Code:</strong></td>
+            <td><span class="highlight">${referralCode}</span></td>
+          </tr>
+        </table>
+      </div>
+      
+      <div style="background: #e8f5e9; border-radius: 8px; padding: 15px; margin: 20px 0;">
+        <p style="margin: 0; color: #2e7d32;">
+          <strong>🎁 Refer & Earn:</strong> Share your referral code with friends and family. When they make a purchase, you earn commission!
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${storeInfo.website}" class="btn">Start Shopping</a>
+      </div>
+      
+      <p>Explore our exclusive collection of premium ethnic and bridal wear. We're here to make your special moments even more beautiful!</p>
+      
+      <p>Happy Shopping! 🛍️</p>
+    `),
+    text: `Welcome to ${storeInfo.name}, ${userName}!\n\nThank you for creating an account with us.\n\nYour Email: ${userEmail}\nYour Referral Code: ${referralCode}\n\nShare your referral code with friends to earn commission!\n\nHappy Shopping!\n${storeInfo.name}`,
+  }),
+
   loginSuccess: (userName: string, userEmail: string, loginTime: string, ipAddress?: string) => ({
     subject: `Login Successful – ${storeInfo.name}`,
     html: baseTemplate(`
@@ -309,6 +346,11 @@ export async function sendEmail(
     console.error(`Email failed: ${type} to ${to}`, error.message);
     return false;
   }
+}
+
+export async function sendSignupEmail(user: { email: string; name: string; referralCode: string }) {
+  const template = emailTemplates.signupSuccess(user.name, user.email, user.referralCode);
+  return sendEmail(user.email, template, 'signup_success', user.email);
 }
 
 export async function sendLoginEmail(user: { email: string; name: string }, ipAddress?: string) {
