@@ -49,6 +49,15 @@ interface Order {
   deliveredAt?: string;
   cancelReason?: string;
   returnReason?: string;
+  hasReturnRequest?: boolean;
+  returnStatus?: string;
+  returnId?: string;
+}
+
+interface ReturnInfo {
+  orderId: string;
+  returnId: string;
+  status: string;
 }
 
 const orderStatusTabs = [
@@ -59,6 +68,7 @@ const orderStatusTabs = [
   { value: 'shipped', label: 'Shipped' },
   { value: 'delivered', label: 'Delivered' },
   { value: 'cancelled', label: 'Cancelled' },
+  { value: 'returns', label: 'Returns' },
 ];
 
 const getStatusBadge = (status: string) => {
@@ -75,6 +85,22 @@ const getStatusBadge = (status: string) => {
   return <Badge variant={config.variant}>{config.label}</Badge>;
 };
 
+const getReturnStatusBadge = (status: string) => {
+  const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string; className?: string }> = {
+    pending: { variant: 'outline', label: 'Return Requested', className: 'border-orange-500 text-orange-600' },
+    approved: { variant: 'outline', label: 'Return Approved', className: 'border-blue-500 text-blue-600' },
+    rejected: { variant: 'destructive', label: 'Return Rejected' },
+    pickup_scheduled: { variant: 'outline', label: 'Pickup Scheduled', className: 'border-purple-500 text-purple-600' },
+    picked_up: { variant: 'outline', label: 'Picked Up', className: 'border-indigo-500 text-indigo-600' },
+    received: { variant: 'outline', label: 'Received', className: 'border-cyan-500 text-cyan-600' },
+    inspecting: { variant: 'outline', label: 'Inspecting', className: 'border-teal-500 text-teal-600' },
+    refund_initiated: { variant: 'outline', label: 'Refund Initiated', className: 'border-green-500 text-green-600' },
+    refund_completed: { variant: 'default', label: 'Refund Completed' },
+  };
+  const config = statusMap[status] || { variant: 'outline' as const, label: status };
+  return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
+};
+
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -86,10 +112,13 @@ const formatPrice = (price: number) => {
 export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [orders, setOrders] = useState<Order[]>([]);
+  const [returnInfoMap, setReturnInfoMap] = useState<Record<string, ReturnInfo>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [showReturnDetailsDialog, setShowReturnDetailsDialog] = useState(false);
+  const [selectedReturnInfo, setSelectedReturnInfo] = useState<any>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [returnReason, setReturnReason] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
@@ -120,10 +149,65 @@ export default function OrdersPage() {
   const loadOrders = async () => {
     try {
       setIsLoading(true);
-      const status = activeTab === 'all' ? undefined : activeTab;
-      const params = status ? `?status=${status}` : '';
-      const data = await api.get<{ orders: Order[]; total: number }>(`/user/orders${params}`);
-      setOrders(data.orders || []);
+      
+      // If returns tab, fetch returns instead
+      if (activeTab === 'returns') {
+        const returnsData = await api.get<{ returns: any[] }>('/user/returns');
+        const orderIds = returnsData.returns?.map(r => r.orderId?._id) || [];
+        
+        // Fetch full order details for these orders
+        const ordersWithReturns: Order[] = [];
+        const returnMap: Record<string, ReturnInfo> = {};
+        
+        for (const ret of returnsData.returns || []) {
+          if (ret.orderId) {
+            ordersWithReturns.push({
+              ...ret.orderId,
+              hasReturnRequest: true,
+              returnStatus: ret.status,
+              returnId: ret._id
+            });
+            returnMap[ret.orderId._id] = {
+              orderId: ret.orderId._id,
+              returnId: ret._id,
+              status: ret.status
+            };
+          }
+        }
+        
+        setOrders(ordersWithReturns);
+        setReturnInfoMap(returnMap);
+      } else {
+        const status = activeTab === 'all' ? undefined : activeTab;
+        const params = status ? `?status=${status}` : '';
+        const [ordersData, returnsData] = await Promise.all([
+          api.get<{ orders: Order[]; total: number }>(`/user/orders${params}`),
+          api.get<{ returns: any[] }>('/user/returns')
+        ]);
+        
+        // Build return info map
+        const returnMap: Record<string, ReturnInfo> = {};
+        for (const ret of returnsData.returns || []) {
+          if (ret.orderId?._id) {
+            returnMap[ret.orderId._id] = {
+              orderId: ret.orderId._id,
+              returnId: ret._id,
+              status: ret.status
+            };
+          }
+        }
+        setReturnInfoMap(returnMap);
+        
+        // Mark orders that have returns
+        const ordersWithReturnInfo = (ordersData.orders || []).map(order => ({
+          ...order,
+          hasReturnRequest: !!returnMap[order._id],
+          returnStatus: returnMap[order._id]?.status,
+          returnId: returnMap[order._id]?.returnId
+        }));
+        
+        setOrders(ordersWithReturnInfo);
+      }
     } catch (error) {
       console.error('Failed to load orders:', error);
       setOrders([]);
@@ -264,9 +348,10 @@ export default function OrdersPage() {
                   <CardContent className="pt-6">
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
                           <span className="font-semibold">Order #{order.orderId}</span>
                           {getStatusBadge(order.orderStatus)}
+                          {order.hasReturnRequest && order.returnStatus && getReturnStatusBadge(order.returnStatus)}
                         </div>
                         <p className="text-sm text-muted-foreground">
                           Placed on {format(new Date(order.createdAt), 'MMM dd, yyyy')}
@@ -345,7 +430,25 @@ export default function OrdersPage() {
                         </Button>
                       )}
 
-                      {order.orderStatus === 'delivered' && (() => {
+                      {order.hasReturnRequest ? (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const returnData = await api.get<{ return: any }>(`/user/returns/${order.returnId}`);
+                              setSelectedReturnInfo(returnData.return);
+                              setShowReturnDetailsDialog(true);
+                            } catch (error) {
+                              toast({ title: 'Failed to load return details', variant: 'destructive' });
+                            }
+                          }}
+                          data-testid={`button-view-return-${order.orderId}`}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Return
+                        </Button>
+                      ) : order.orderStatus === 'delivered' && (() => {
                         const eligibility = getReturnEligibility(order);
                         if (eligibility.eligible) {
                           return (
@@ -502,6 +605,67 @@ export default function OrdersPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showReturnDetailsDialog} onOpenChange={setShowReturnDetailsDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Return Request Details</DialogTitle>
+            <DialogDescription>
+              View the status and details of your return request
+            </DialogDescription>
+          </DialogHeader>
+          {selectedReturnInfo && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Status:</span>
+                {getReturnStatusBadge(selectedReturnInfo.status)}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Return ID</p>
+                  <p className="font-medium">{selectedReturnInfo.returnId}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Requested On</p>
+                  <p className="font-medium">{format(new Date(selectedReturnInfo.createdAt), 'MMM dd, yyyy')}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Refund Amount</p>
+                  <p className="font-medium">{formatPrice(selectedReturnInfo.refundAmount || 0)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Refund Status</p>
+                  <p className="font-medium capitalize">{selectedReturnInfo.refundStatus || 'Pending'}</p>
+                </div>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Reason</p>
+                <p className="text-sm bg-muted p-3 rounded-lg">{selectedReturnInfo.reason}</p>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-2">Items</h4>
+                <div className="space-y-2">
+                  {selectedReturnInfo.items?.map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span>{item.name} x {item.quantity}</span>
+                      <span>{formatPrice(item.price * item.quantity)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setShowReturnDetailsDialog(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

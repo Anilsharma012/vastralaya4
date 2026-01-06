@@ -41,7 +41,7 @@ const CouponSchema = new Schema<ICoupon>({
   isActive: { type: Boolean, default: true },
   startDate: { type: Date },
   endDate: { type: Date },
-  createdBy: { type: Schema.Types.ObjectId, ref: 'Admin', required: true },
+  createdBy: { type: Schema.Types.ObjectId, ref: 'Admin' },
 }, { timestamps: true });
 
 export default mongoose.model<ICoupon>('Coupon', CouponSchema);

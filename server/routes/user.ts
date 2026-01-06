@@ -111,16 +111,50 @@ router.post('/orders', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'No valid items in order' });
     }
     
+    // Validate and apply coupon if provided
+    let discount = 0;
+    let validatedCouponCode: string | undefined = undefined;
+    
+    if (couponCode) {
+      const { Coupon } = await import('../models');
+      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
+      
+      if (coupon) {
+        const now = new Date();
+        const isValid = (!coupon.startDate || now >= coupon.startDate) &&
+                       (!coupon.endDate || now <= coupon.endDate) &&
+                       (!coupon.usageLimit || coupon.usedCount < coupon.usageLimit) &&
+                       (!coupon.minOrderAmount || subtotal >= coupon.minOrderAmount);
+        
+        if (isValid) {
+          if (coupon.type === 'percentage') {
+            discount = Math.round((subtotal * coupon.value) / 100);
+            if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+              discount = coupon.maxDiscount;
+            }
+          } else {
+            discount = coupon.value;
+          }
+          discount = Math.min(discount, subtotal);
+          validatedCouponCode = coupon.code;
+          
+          // Increment coupon usage
+          coupon.usedCount = (coupon.usedCount || 0) + 1;
+          await coupon.save();
+        }
+      }
+    }
+    
     const orderId = 'SBV' + Date.now().toString(36).toUpperCase();
     const shippingCharge = subtotal >= 999 ? 0 : 99;
-    const total = subtotal + shippingCharge;
+    const total = subtotal - discount + shippingCharge;
     
     const order = new Order({
       orderId,
       userId: req.userId,
       items: orderItems,
       subtotal,
-      discount: 0,
+      discount,
       shippingCharge,
       tax: 0,
       total,
@@ -128,7 +162,7 @@ router.post('/orders', async (req: AuthRequest, res: Response) => {
       paymentMethod: paymentMethod || 'cod',
       paymentStatus: paymentMethod === 'cod' ? 'pending' : 'pending',
       orderStatus: 'pending',
-      couponCode,
+      couponCode: validatedCouponCode,
       referralCode
     });
     
@@ -270,7 +304,7 @@ router.post('/orders/:id/return', async (req: AuthRequest, res: Response) => {
 router.get('/returns', async (req: AuthRequest, res: Response) => {
   try {
     const returns = await Return.find({ userId: req.userId })
-      .populate('orderId', 'orderId total orderStatus deliveredAt')
+      .populate('orderId', '_id orderId total orderStatus deliveredAt items subtotal shippingCharge createdAt paymentMethod')
       .sort({ createdAt: -1 });
     res.json({ returns });
   } catch (error) {
@@ -955,6 +989,96 @@ router.get('/referrer-stats', async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error('Failed to get referrer stats:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========== COUPONS ==========
+router.post('/coupons/validate', async (req: AuthRequest, res: Response) => {
+  try {
+    const { code, orderAmount } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ message: 'Coupon code is required' });
+    }
+    
+    const { Coupon } = await import('../models');
+    const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
+    
+    if (!coupon) {
+      return res.status(404).json({ message: 'Invalid coupon code' });
+    }
+    
+    // Check expiry
+    const now = new Date();
+    if (coupon.startDate && now < coupon.startDate) {
+      return res.status(400).json({ message: 'Coupon is not active yet' });
+    }
+    if (coupon.endDate && now > coupon.endDate) {
+      return res.status(400).json({ message: 'Coupon has expired' });
+    }
+    
+    // Check usage limit
+    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+      return res.status(400).json({ message: 'Coupon usage limit exceeded' });
+    }
+    
+    // Check minimum order amount
+    if (coupon.minOrderAmount && orderAmount < coupon.minOrderAmount) {
+      return res.status(400).json({ 
+        message: `Minimum order amount is ₹${coupon.minOrderAmount}` 
+      });
+    }
+    
+    // Calculate discount
+    let discount = 0;
+    if (coupon.type === 'percentage') {
+      discount = (orderAmount * coupon.value) / 100;
+      if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+        discount = coupon.maxDiscount;
+      }
+    } else {
+      discount = coupon.value;
+    }
+    
+    // Don't give more discount than order amount
+    discount = Math.min(discount, orderAmount);
+    
+    res.json({
+      valid: true,
+      coupon: {
+        code: coupon.code,
+        type: coupon.type,
+        value: coupon.value,
+        maxDiscount: coupon.maxDiscount,
+        description: coupon.description
+      },
+      discount: Math.round(discount)
+    });
+  } catch (error) {
+    console.error('Coupon validation error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/coupons/available', async (req: AuthRequest, res: Response) => {
+  try {
+    const { Coupon } = await import('../models');
+    const now = new Date();
+    
+    const coupons = await Coupon.find({
+      isActive: true,
+      $and: [
+        { $or: [{ startDate: { $lte: now } }, { startDate: null }] },
+        { $or: [{ endDate: { $gte: now } }, { endDate: null }] }
+      ]
+    }).select('code type value minOrderAmount maxDiscount description usageLimit usedCount');
+    
+    // Filter out fully used coupons
+    const availableCoupons = coupons.filter(c => !c.usageLimit || c.usedCount < c.usageLimit);
+    
+    res.json({ coupons: availableCoupons });
+  } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -191,6 +191,17 @@ For refunds:
   - Return request creates proper Return record with all details
   - Admin sees bank/UPI details, delivered date, items, and reason in Returns page
   - Status workflow: Pending → Approved/Rejected → Pickup Scheduled → Picked Up → Received → Inspecting → Refund Initiated → Refund Completed
+  - "Returns" tab in My Orders page to filter orders with return requests
+  - "Return Requested" status badge on orders with submitted returns
+  - "View Return" button to see return details dialog
+- **Coupon System**:
+  - Admin can create/edit/delete coupons with: code, type (percentage/fixed), value, min order, max discount, usage limit, validity dates
+  - Checkout page displays available coupons
+  - Coupon code input with Apply button
+  - Real-time coupon validation (expiry, min order, usage limit)
+  - Discount shown in order summary
+  - Backend applies coupon discount to order total
+  - Coupon usage count incremented on successful order
 - Admin credentials: admin@shribalaji.com / Admin@123
 
 ## Influencer Dashboard Access

@@ -691,7 +691,7 @@ router.put('/influencers/:id', async (req: AuthRequest, res: Response) => {
 router.get('/coupons', async (req, res: Response) => {
   try {
     const coupons = await Coupon.find().sort({ createdAt: -1 });
-    res.json(coupons);
+    res.json({ coupons });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

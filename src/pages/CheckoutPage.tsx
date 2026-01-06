@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { MapPin, CreditCard, Check, Banknote, Smartphone } from "lucide-react";
+import { MapPin, CreditCard, Check, Banknote, Smartphone, Ticket, X, Tag } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { api } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
 
 interface Address {
   _id: string;
@@ -71,15 +72,28 @@ const CheckoutPage = () => {
     isDefault: true
   });
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    type: string;
+    value: number;
+    description?: string;
+  } | null>(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
+
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
     try {
-      const [addressData, settingsData] = await Promise.all([
+      const [addressData, settingsData, couponsData] = await Promise.all([
         api.get<Address[]>('/user/addresses').catch(() => []),
-        api.get<{ settings: any }>('/public/settings').catch(() => ({ settings: null }))
+        api.get<{ settings: any }>('/public/settings').catch(() => ({ settings: null })),
+        api.get<{ coupons: any[] }>('/user/coupons/available').catch(() => ({ coupons: [] }))
       ]);
       
       setAddresses(addressData);
@@ -92,11 +106,46 @@ const CheckoutPage = () => {
           setPaymentMethod('online');
         }
       }
+      
+      setAvailableCoupons(couponsData.coupons || []);
     } catch {
       setAddresses([]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const applyCoupon = async (code?: string) => {
+    const codeToApply = code || couponCode;
+    if (!codeToApply.trim()) {
+      toast({ title: 'Please enter a coupon code', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      setIsApplyingCoupon(true);
+      const result = await api.post<{ valid: boolean; coupon: any; discount: number }>('/user/coupons/validate', {
+        code: codeToApply.toUpperCase(),
+        orderAmount: checkoutTotal
+      });
+
+      if (result.valid) {
+        setAppliedCoupon(result.coupon);
+        setCouponDiscount(result.discount);
+        setCouponCode('');
+        toast({ title: `Coupon applied! You save ${formatPrice(result.discount)}` });
+      }
+    } catch (error: any) {
+      toast({ title: error.message || 'Invalid coupon code', variant: 'destructive' });
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    toast({ title: 'Coupon removed' });
   };
 
   const saveAddress = async () => {
@@ -197,7 +246,8 @@ const CheckoutPage = () => {
           state: address?.state || '',
           pincode: address?.pincode || ''
         },
-        paymentMethod
+        paymentMethod,
+        couponCode: appliedCoupon?.code
       };
 
       const order = await api.post<{ _id: string; orderId: string; total: number }>('/user/orders', orderData);
@@ -238,7 +288,7 @@ const CheckoutPage = () => {
     : total;
 
   const shippingCharge = checkoutTotal >= 999 ? 0 : 99;
-  const grandTotal = checkoutTotal + shippingCharge;
+  const grandTotal = checkoutTotal - couponDiscount + shippingCharge;
 
   if (isLoading || cartLoading) {
     return (
@@ -415,11 +465,97 @@ const CheckoutPage = () => {
                 
                 <Separator className="my-4" />
                 
+                {/* Coupon Section */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Ticket className="h-4 w-4" />
+                    <span className="text-sm font-medium">Apply Coupon</span>
+                  </div>
+                  
+                  {appliedCoupon ? (
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-green-600" />
+                        <div>
+                          <span className="font-mono font-medium text-green-700">{appliedCoupon.code}</span>
+                          <p className="text-xs text-green-600">
+                            {appliedCoupon.type === 'percentage' 
+                              ? `${appliedCoupon.value}% off` 
+                              : `₹${appliedCoupon.value} off`}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={removeCoupon}
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <Input
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          placeholder="Enter coupon code"
+                          className="font-mono uppercase"
+                          data-testid="input-coupon"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => applyCoupon()}
+                          disabled={isApplyingCoupon || !couponCode.trim()}
+                          data-testid="button-apply-coupon"
+                        >
+                          {isApplyingCoupon ? 'Applying...' : 'Apply'}
+                        </Button>
+                      </div>
+                      
+                      {availableCoupons.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs text-muted-foreground mb-2">Available Coupons:</p>
+                          <div className="space-y-2 max-h-32 overflow-y-auto">
+                            {availableCoupons.slice(0, 3).map((coupon) => (
+                              <div
+                                key={coupon._id}
+                                className="flex items-center justify-between p-2 border rounded text-sm cursor-pointer hover:bg-muted/50"
+                                onClick={() => applyCoupon(coupon.code)}
+                              >
+                                <div>
+                                  <span className="font-mono font-medium">{coupon.code}</span>
+                                  <p className="text-xs text-muted-foreground">
+                                    {coupon.type === 'percentage' 
+                                      ? `${coupon.value}% off` 
+                                      : `₹${coupon.value} off`}
+                                    {coupon.minOrderAmount > 0 && ` on min ₹${coupon.minOrderAmount}`}
+                                  </p>
+                                </div>
+                                <Badge variant="outline" className="text-xs">Apply</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+                
+                <Separator className="my-4" />
+                
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>{formatPrice(checkoutTotal)}</span>
                   </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Coupon Discount</span>
+                      <span>-{formatPrice(couponDiscount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Shipping</span>
                     <span>{shippingCharge > 0 ? formatPrice(shippingCharge) : 'FREE'}</span>
