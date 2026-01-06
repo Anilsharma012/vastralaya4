@@ -177,6 +177,11 @@ For refunds:
 - **Product Variant Display**: Size selector styled with bordered buttons (S, M, L, XL, etc.)
 - **Buy Now Button**: Direct checkout functionality - adds to cart and navigates to checkout
 - **Footer Updates**: Social media links (Facebook, Instagram, YouTube) and navigation to CMS pages
+- **User Registration Validation**: Email and phone number uniqueness validation with specific error messages
+- **Referral System**: Auto-apply referral code from URL (?ref=CODE), display in registration form, track referrer-referee relationships
+- **Commission Tier System**: 5-tier commission structure (Bronze 5%, Silver 7%, Gold 10%, Platinum 12%, Diamond 15%) based on successful referrals
+- **Commission Dashboard**: User dashboard displays current tier, commission rate, total earnings, pending commission, and tier progression
+- **Color-wise Stock Management**: Each product color variant has independent stock quantity tracking
 - Admin credentials: admin@shribalaji.com / Admin@123
 
 ## Influencer Dashboard Access
