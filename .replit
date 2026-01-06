@@ -45,3 +45,9 @@ externalPort = 80
 [[ports]]
 localPort = 5001
 externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+JWT_SECRET = "9f3c7a8e2b1d4c"
+MONGODB_URI = "mongodb+srv://anilvasisht027_db_user:Anilsharma123@cluster0.lcd8pxy.mongodb.net/"
