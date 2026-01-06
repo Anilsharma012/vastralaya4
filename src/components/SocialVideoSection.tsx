@@ -22,12 +22,36 @@ interface SocialMediaPost {
 const SocialVideoSection = () => {
   const [posts, setPosts] = useState<SocialMediaPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadPosts();
   }, []);
+
+  useEffect(() => {
+    if (posts.length <= 1 || isPaused) return;
+    
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const container = scrollRef.current;
+        const cardWidth = container.firstElementChild?.clientWidth || 200;
+        const gap = 16;
+        const scrollAmount = cardWidth + gap;
+        
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        
+        if (container.scrollLeft >= maxScroll - 10) {
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [posts.length, isPaused]);
 
   const loadPosts = async () => {
     try {
@@ -148,6 +172,8 @@ const SocialVideoSection = () => {
               ref={scrollRef}
               className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-2 md:px-10"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
             >
               {posts.map((post) => (
                 <div 
