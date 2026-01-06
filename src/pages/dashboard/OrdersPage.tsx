@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
-import { Package, ShoppingBag, Truck, CheckCircle, XCircle, Clock, Eye, RotateCcw } from 'lucide-react';
+import { Package, ShoppingBag, Truck, CheckCircle, XCircle, Clock, Eye, RotateCcw, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { format } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { format, differenceInHours } from 'date-fns';
 
 interface OrderItem {
   productId: string;
@@ -89,8 +92,26 @@ export default function OrdersPage() {
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [returnReason, setReturnReason] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [upiId, setUpiId] = useState('');
+  const [accountHolderName, setAccountHolderName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  const getReturnEligibility = (order: Order) => {
+    if (order.orderStatus !== 'delivered') {
+      return { eligible: false, reason: 'Order must be delivered first' };
+    }
+    if (!order.deliveredAt) {
+      return { eligible: false, reason: 'Delivery date not recorded' };
+    }
+    const hoursSinceDelivery = differenceInHours(new Date(), new Date(order.deliveredAt));
+    if (hoursSinceDelivery > 72) {
+      return { eligible: false, reason: 'Return window expired (3 days from delivery)' };
+    }
+    const hoursRemaining = 72 - hoursSinceDelivery;
+    return { eligible: true, hoursRemaining: Math.max(0, hoursRemaining) };
+  };
 
   useEffect(() => {
     loadOrders();
@@ -130,12 +151,36 @@ export default function OrdersPage() {
 
   const handleReturnOrder = async () => {
     if (!selectedOrder) return;
+    
+    if (!returnReason.trim()) {
+      toast({ title: 'Please provide a return reason', variant: 'destructive' });
+      return;
+    }
+    
+    if (!bankAccountNumber.trim() && !upiId.trim()) {
+      toast({ title: 'Please provide bank account number or UPI ID for refund', variant: 'destructive' });
+      return;
+    }
+    
+    if (upiId && !/^[\w.-]+@[\w]+$/.test(upiId)) {
+      toast({ title: 'Invalid UPI ID format (e.g., name@upi)', variant: 'destructive' });
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
-      await api.post(`/user/orders/${selectedOrder._id}/return`, { reason: returnReason });
+      await api.post(`/user/orders/${selectedOrder._id}/return`, { 
+        reason: returnReason,
+        bankAccountNumber: bankAccountNumber.trim() || undefined,
+        upiId: upiId.trim() || undefined,
+        accountHolderName: accountHolderName.trim() || undefined
+      });
       toast({ title: 'Return request submitted successfully' });
       setShowReturnDialog(false);
       setReturnReason('');
+      setBankAccountNumber('');
+      setUpiId('');
+      setAccountHolderName('');
       setSelectedOrder(null);
       loadOrders();
     } catch (error: any) {
@@ -300,20 +345,38 @@ export default function OrdersPage() {
                         </Button>
                       )}
 
-                      {canReturn(order.orderStatus) && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setShowReturnDialog(true);
-                          }}
-                          data-testid={`button-return-${order.orderId}`}
-                        >
-                          <RotateCcw className="h-4 w-4 mr-1" />
-                          Return Order
-                        </Button>
-                      )}
+                      {order.orderStatus === 'delivered' && (() => {
+                        const eligibility = getReturnEligibility(order);
+                        if (eligibility.eligible) {
+                          return (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setShowReturnDialog(true);
+                              }}
+                              data-testid={`button-return-${order.orderId}`}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-1" />
+                              Return Order
+                            </Button>
+                          );
+                        } else {
+                          return (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              disabled
+                              className="opacity-50"
+                              data-testid={`button-return-${order.orderId}`}
+                            >
+                              <AlertCircle className="h-4 w-4 mr-1" />
+                              {eligibility.reason}
+                            </Button>
+                          );
+                        }
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
@@ -358,7 +421,7 @@ export default function OrdersPage() {
       </Dialog>
 
       <Dialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Return Order</DialogTitle>
             <DialogDescription>
@@ -366,22 +429,74 @@ export default function OrdersPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Reason for return</label>
+            {selectedOrder && selectedOrder.deliveredAt && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Return window: {Math.max(0, 72 - differenceInHours(new Date(), new Date(selectedOrder.deliveredAt)))} hours remaining
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="returnReason">Reason for return *</Label>
               <Textarea
+                id="returnReason"
                 value={returnReason}
                 onChange={(e) => setReturnReason(e.target.value)}
                 placeholder="Please describe why you want to return this order"
-                className="mt-1"
               />
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowReturnDialog(false)}>
+            
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium mb-3">Refund Details (Bank Account OR UPI required)</p>
+              
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                  <Input
+                    id="bankAccountNumber"
+                    value={bankAccountNumber}
+                    onChange={(e) => setBankAccountNumber(e.target.value)}
+                    placeholder="Enter your bank account number"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="upiId">UPI ID</Label>
+                  <Input
+                    id="upiId"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    placeholder="e.g., yourname@upi"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="accountHolderName">Account Holder Name (Optional)</Label>
+                  <Input
+                    id="accountHolderName"
+                    value={accountHolderName}
+                    onChange={(e) => setAccountHolderName(e.target.value)}
+                    placeholder="Name as per bank account"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => {
+                setShowReturnDialog(false);
+                setReturnReason('');
+                setBankAccountNumber('');
+                setUpiId('');
+                setAccountHolderName('');
+              }}>
                 Cancel
               </Button>
               <Button 
                 onClick={handleReturnOrder}
-                disabled={isSubmitting || !returnReason.trim()}
+                disabled={isSubmitting || !returnReason.trim() || (!bankAccountNumber.trim() && !upiId.trim())}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Return Request'}
               </Button>

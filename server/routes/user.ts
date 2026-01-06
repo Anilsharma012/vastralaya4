@@ -217,7 +217,7 @@ router.post('/orders/:id/return', async (req: AuthRequest, res: Response) => {
     
     const returnId = 'RTN' + Date.now().toString(36).toUpperCase();
     
-    let returnItems = [];
+    let returnItems: any[] = [];
     if (items && items.length > 0) {
       returnItems = items.map((item: any) => ({
         productId: item.productId,
