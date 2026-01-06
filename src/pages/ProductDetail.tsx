@@ -42,6 +42,7 @@ interface ProductData {
     _id: string;
     color: string;
     images: string[];
+    stock?: number;
   }>;
   attributes: Record<string, string>;
   tags: string[];
@@ -164,8 +165,26 @@ const ProductDetail = () => {
     }).format(price);
   };
 
+  const getSelectedColorStock = () => {
+    if (!product) return 0;
+    if (product.colorVariants && product.colorVariants.length > 0) {
+      const colorVariant = product.colorVariants[selectedColorVariant];
+      return colorVariant?.stock ?? product.stock;
+    }
+    return product.stock;
+  };
+
+  const getSelectedColorName = () => {
+    if (!product) return null;
+    if (product.colorVariants && product.colorVariants.length > 0) {
+      return product.colorVariants[selectedColorVariant]?.color || null;
+    }
+    return null;
+  };
+
   const handleQuantityChange = (delta: number) => {
-    setQuantity(prev => Math.max(1, Math.min(10, prev + delta)));
+    const maxStock = getSelectedColorStock();
+    setQuantity(prev => Math.max(1, Math.min(maxStock, Math.min(10, prev + delta))));
   };
 
   const handleAddToCart = async () => {
@@ -190,11 +209,22 @@ const ProductDetail = () => {
       return;
     }
 
+    const colorStock = getSelectedColorStock();
+    if (colorStock < quantity) {
+      toast({
+        title: "Insufficient Stock",
+        description: `Only ${colorStock} items available for this color`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setAddingToCart(true);
     try {
       const variant = product.variants[selectedVariant];
       const cartSize = selectedSize || variant?.size;
-      await addToCart(product._id, quantity, cartSize, variant?.color);
+      const cartColor = getSelectedColorName() || variant?.color;
+      await addToCart(product._id, quantity, cartSize, cartColor);
       toast({
         title: "Added to Cart",
         description: `${product.name} has been added to your cart`
@@ -260,12 +290,24 @@ const ProductDetail = () => {
       return;
     }
 
+    const colorStock = getSelectedColorStock();
+    if (colorStock < quantity) {
+      toast({
+        title: "Insufficient Stock",
+        description: `Only ${colorStock} items available for this color`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setAddingToCart(true);
       const variant = product.variants[selectedVariant];
       const variantPrice = variant?.price || product.price;
-      const variantImage = variant?.images?.[0] || product.images?.[0] || '/placeholder-product.jpg';
+      const colorVariant = product.colorVariants?.[selectedColorVariant];
+      const variantImage = colorVariant?.images?.[0] || variant?.images?.[0] || product.images?.[0] || '/placeholder-product.jpg';
       const cartSize = selectedSize || variant?.size;
+      const cartColor = getSelectedColorName() || variant?.color;
 
       // Pass product data directly to checkout page via state
       navigate('/checkout', {
@@ -277,7 +319,7 @@ const ProductDetail = () => {
             image: variantImage,
             quantity,
             size: cartSize,
-            color: variant?.color,
+            color: cartColor,
             variantId: variant?._id
           }
         }
@@ -627,23 +669,38 @@ const ProductDetail = () => {
                 <div>
                   <h3 className="text-sm font-medium text-foreground mb-3">Color</h3>
                   <div className="flex gap-2 flex-wrap">
-                    {product.colorVariants.map((colorVariant, index) => (
-                      <button
-                        key={`color-${index}`}
-                        onClick={() => {
-                          setSelectedColorVariant(index);
-                          setSelectedImage(0);
-                        }}
-                        className={`px-4 py-2 rounded-lg border-2 font-medium transition-all ${
-                          selectedColorVariant === index
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-background text-foreground hover:border-primary"
-                        }`}
-                        data-testid={`button-color-${index}`}
-                      >
-                        {colorVariant.color || `Color ${index + 1}`}
-                      </button>
-                    ))}
+                    {product.colorVariants.map((colorVariant, index) => {
+                      const colorStock = colorVariant.stock ?? 0;
+                      const isOutOfStock = colorStock === 0;
+                      return (
+                        <button
+                          key={`color-${index}`}
+                          onClick={() => {
+                            if (!isOutOfStock) {
+                              setSelectedColorVariant(index);
+                              setSelectedImage(0);
+                              setQuantity(1);
+                            }
+                          }}
+                          disabled={isOutOfStock}
+                          className={`px-4 py-2 rounded-lg border-2 font-medium transition-all relative ${
+                            isOutOfStock
+                              ? "border-muted bg-muted/50 text-muted-foreground cursor-not-allowed"
+                              : selectedColorVariant === index
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background text-foreground hover:border-primary"
+                          }`}
+                          data-testid={`button-color-${index}`}
+                        >
+                          {colorVariant.color || `Color ${index + 1}`}
+                          {isOutOfStock && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                              Out
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -689,8 +746,10 @@ const ProductDetail = () => {
                 ))}
                 <p>
                   <strong className="text-foreground">Availability:</strong>{' '}
-                  <span className={product.stock > 0 ? "text-green-600" : "text-red-600"}>
-                    {product.stock > 0 ? `In Stock (${product.stock} available)` : "Out of Stock"}
+                  <span className={getSelectedColorStock() > 0 ? "text-green-600" : "text-red-600"}>
+                    {getSelectedColorStock() > 0 
+                      ? `In Stock (${getSelectedColorStock()} available${getSelectedColorName() ? ` for ${getSelectedColorName()}` : ''})` 
+                      : "Out of Stock"}
                   </span>
                 </p>
               </div>
@@ -750,7 +809,7 @@ const ProductDetail = () => {
                     <button 
                       onClick={() => handleQuantityChange(-1)}
                       className="p-3 hover:bg-muted transition-colors"
-                      disabled={quantity <= 1}
+                      disabled={quantity <= 1 || getSelectedColorStock() === 0}
                       data-testid="button-quantity-decrease"
                     >
                       <Minus className="h-4 w-4" />
@@ -759,7 +818,7 @@ const ProductDetail = () => {
                     <button 
                       onClick={() => handleQuantityChange(1)}
                       className="p-3 hover:bg-muted transition-colors"
-                      disabled={quantity >= 10 || quantity >= product.stock}
+                      disabled={quantity >= 10 || quantity >= getSelectedColorStock()}
                       data-testid="button-quantity-increase"
                     >
                       <Plus className="h-4 w-4" />
@@ -771,18 +830,18 @@ const ProductDetail = () => {
                   <Button 
                     className="btn-primary flex-1 rounded-lg py-6 text-base font-semibold"
                     onClick={handleAddToCart}
-                    disabled={addingToCart || product.stock === 0}
+                    disabled={addingToCart || getSelectedColorStock() === 0}
                     data-testid="button-add-to-cart"
                   >
-                    {addingToCart ? <Loader2 className="h-5 w-5 animate-spin" /> : "ADD TO CART"}
+                    {addingToCart ? <Loader2 className="h-5 w-5 animate-spin" /> : getSelectedColorStock() === 0 ? "OUT OF STOCK" : "ADD TO CART"}
                   </Button>
                   <Button 
                     className="btn-gold flex-1 rounded-lg py-6 text-base font-semibold"
-                    disabled={product.stock === 0}
+                    disabled={getSelectedColorStock() === 0}
                     onClick={handleBuyNow}
                     data-testid="button-buy-now"
                   >
-                    BUY NOW
+                    {getSelectedColorStock() === 0 ? "OUT OF STOCK" : "BUY NOW"}
                   </Button>
                 </div>
               </div>

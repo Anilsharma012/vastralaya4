@@ -46,29 +46,65 @@ router.post('/orders', async (req: AuthRequest, res: Response) => {
     
     let subtotal = 0;
     const orderItems = [];
+    const stockUpdates: { product: any; colorIndex?: number; quantity: number }[] = [];
     
     for (const item of items) {
       const product = await Product.findById(item.productId);
       if (!product) {
         return res.status(400).json({ message: `Product not found: ${item.productId}` });
       }
-      if (product.stock < item.quantity) {
-        return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+      
+      let availableStock = product.stock;
+      let colorVariantIndex = -1;
+      let itemImage = product.images[0];
+      
+      if (item.color && product.colorVariants && product.colorVariants.length > 0) {
+        colorVariantIndex = product.colorVariants.findIndex(
+          (cv: any) => cv.color.toLowerCase() === item.color.toLowerCase()
+        );
+        if (colorVariantIndex !== -1) {
+          availableStock = product.colorVariants[colorVariantIndex].stock || 0;
+          if (product.colorVariants[colorVariantIndex].images?.length > 0) {
+            itemImage = product.colorVariants[colorVariantIndex].images[0];
+          }
+        } else {
+          return res.status(400).json({ 
+            message: `Color "${item.color}" not available for ${product.name}` 
+          });
+        }
+      } else if (item.color && (!product.colorVariants || product.colorVariants.length === 0)) {
+        return res.status(400).json({ 
+          message: `Color variants not available for ${product.name}` 
+        });
+      }
+      
+      if (availableStock < item.quantity) {
+        const colorInfo = item.color ? ` (${item.color})` : '';
+        return res.status(400).json({ 
+          message: `Insufficient stock for ${product.name}${colorInfo}. Available: ${availableStock}` 
+        });
       }
       
       (orderItems as any[]).push({
         productId: product._id,
         name: product.name,
-        image: product.images[0],
+        image: itemImage,
         price: product.price,
         quantity: item.quantity,
-        size: item.size,
-        color: item.color
+        size: item.size || null,
+        color: item.color || null
       });
       
       subtotal += product.price * item.quantity;
-      product.stock -= item.quantity;
-      await product.save();
+      stockUpdates.push({ product, colorIndex: colorVariantIndex, quantity: item.quantity });
+    }
+    
+    for (const update of stockUpdates) {
+      if (update.colorIndex !== undefined && update.colorIndex >= 0) {
+        update.product.colorVariants[update.colorIndex].stock -= update.quantity;
+      }
+      update.product.stock -= update.quantity;
+      await update.product.save();
     }
     
     if (orderItems.length === 0) {
@@ -118,7 +154,19 @@ router.post('/orders/:id/cancel', async (req: AuthRequest, res: Response) => {
     await order.save();
     
     for (const item of order.items) {
-      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
+      const product = await Product.findById(item.productId);
+      if (product) {
+        product.stock += item.quantity;
+        if (item.color && product.colorVariants && product.colorVariants.length > 0) {
+          const colorVariantIndex = product.colorVariants.findIndex(
+            (cv: any) => cv.color.toLowerCase() === item.color?.toLowerCase()
+          );
+          if (colorVariantIndex !== -1) {
+            product.colorVariants[colorVariantIndex].stock += item.quantity;
+          }
+        }
+        await product.save();
+      }
     }
     
     res.json(order);

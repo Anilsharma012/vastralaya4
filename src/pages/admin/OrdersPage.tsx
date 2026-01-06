@@ -294,7 +294,7 @@ const OrdersPage = () => {
                       <div className="flex-1">
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {item.size && `Size: ${item.size}`} {item.color && `Color: ${item.color}`}
+                          Size: {item.size || 'N/A'} | Color: {item.color || 'N/A'}
                         </p>
                       </div>
                       <div className="text-right">

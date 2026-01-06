@@ -657,12 +657,12 @@ router.put('/influencers/:id', async (req: AuthRequest, res: Response) => {
       // Auto-update approval dates when status changes to approved
       if (status === 'approved' && !influencer.approvedAt) {
         influencer.approvedAt = new Date();
-        influencer.approvedBy = req.userId;
+        influencer.approvedBy = req.userId ? new mongoose.Types.ObjectId(req.userId) : undefined;
       }
       // Auto-update rejection dates when status changes to rejected
       if (status === 'rejected' && !influencer.rejectedAt) {
         influencer.rejectedAt = new Date();
-        influencer.rejectedBy = req.userId;
+        influencer.rejectedBy = req.userId ? new mongoose.Types.ObjectId(req.userId) : undefined;
       }
     }
     if (tier) influencer.tier = tier;
