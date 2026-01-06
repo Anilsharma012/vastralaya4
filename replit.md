@@ -32,7 +32,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Storage
 - **Database**: MongoDB with Mongoose ODM
-- **Models**: Admin, User, Category, Subcategory, Banner, Product, Order, Influencer, Wallet, Transaction, Payout, Referral, Review, Coupon, Ticket, Address, Wishlist, Cart, Page, Settings, AuditLog, FAQ, Announcement, Media, Attribute
+- **Models**: Admin, User, Category, Subcategory, Banner, Product, Order, Influencer, Wallet, Transaction, Payout, Referral, Review, Coupon, Ticket, Address, Wishlist, Cart, Page, Settings, AuditLog, FAQ, Announcement, Media, Attribute, EmailLog
 - **Connection**: Database connection required for full functionality
 - **Seeded Data**: 8 categories and 28 subcategories (Men's Wear, Readymade Dresses, Sarees, Occasion Wear, Unstitched Suits, Indo-Western, New Arrival, Best Seller)
 
@@ -202,6 +202,18 @@ For refunds:
   - Discount shown in order summary
   - Backend applies coupon discount to order total
   - Coupon usage count incremented on successful order
+- **Email Notification System**:
+  - Gmail SMTP integration using Nodemailer
+  - Professional HTML email templates with store branding
+  - Login Success emails (with security notice, timestamp, IP address)
+  - Order Placed emails (order details, items, shipping address, payment method)
+  - Order Shipped emails (tracking number, courier name, expected delivery date)
+  - Order Delivered emails (delivery confirmation, review request CTA)
+  - EmailLog model tracks all sent emails with status, retries, and error messages
+  - Admin Email Logs page at `/admin/email-logs` with stats dashboard, filtering, search, and retry failed emails
+  - Duplicate prevention flags on Order model (orderPlacedEmailSent, shippedEmailSent, deliveredEmailSent)
+  - Async email sending to not block API responses
+  - Environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS (secret)
 - Admin credentials: admin@shribalaji.com / Admin@123
 
 ## Influencer Dashboard Access
