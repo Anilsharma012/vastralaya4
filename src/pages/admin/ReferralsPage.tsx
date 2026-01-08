@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Users, TrendingUp, DollarSign, Calendar } from "lucide-react";
+import { Search, Users, TrendingUp, DollarSign, Calendar, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,16 @@ const ReferralsPage = () => {
       setReferrals([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      await api.put(`/admin/referrals/${id}`, { status: 'converted' });
+      toast({ title: 'Referral approved successfully' });
+      loadReferrals();
+    } catch (error) {
+      toast({ title: 'Failed to approve referral', variant: 'destructive' });
     }
   };
 
@@ -145,12 +156,13 @@ const ReferralsPage = () => {
               <th className="text-right p-3 font-medium">Commission</th>
               <th className="text-center p-3 font-medium">Status</th>
               <th className="text-left p-3 font-medium">Date</th>
+              <th className="text-center p-3 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredReferrals.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                <td colSpan={8} className="p-6 text-center text-muted-foreground">
                   No referrals found
                 </td>
               </tr>
@@ -197,6 +209,18 @@ const ReferralsPage = () => {
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       {new Date(referral.createdAt).toLocaleDateString()}
                     </div>
+                  </td>
+                  <td className="p-3 text-center">
+                    {referral.status === "pending" && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(referral._id)}
+                        className="gap-1"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Approve
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))

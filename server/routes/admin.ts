@@ -1030,6 +1030,22 @@ router.get('/referrals', async (req, res: Response) => {
   }
 });
 
+router.put('/referrals/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const { status, commissionStatus } = req.body;
+    const referral = await Referral.findById(req.params.id);
+    if (!referral) return res.status(404).json({ message: 'Referral not found' });
+    
+    if (status) referral.status = status;
+    if (commissionStatus) referral.commissionStatus = commissionStatus;
+    
+    await referral.save();
+    res.json(referral);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // ========== SETTINGS ==========
 router.get('/settings', async (req, res: Response) => {
   try {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { ChevronRight, SlidersHorizontal, Grid2X2, LayoutGrid, Package } from "lucide-react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
+import { ChevronRight, SlidersHorizontal, Grid2X2, LayoutGrid, Package, Search } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -41,6 +41,8 @@ interface Product {
 
 const CategoryPage = () => {
   const { categorySlug, subcategorySlug } = useParams();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [category, setCategory] = useState<Category | null>(null);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -50,11 +52,21 @@ const CategoryPage = () => {
 
   useEffect(() => {
     loadData();
-  }, [categorySlug, subcategorySlug]);
+  }, [categorySlug, subcategorySlug, searchQuery]);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
+      if (searchQuery) {
+        const data = await api.get<{ products: Product[] }>(`/public/products?search=${encodeURIComponent(searchQuery)}`);
+        setProducts(data.products);
+        setCategory(null);
+        setSubcategories([]);
+        setSelectedSubcategory(null);
+        setIsLoading(false);
+        return;
+      }
+      
       const categories = await api.get<Category[]>('/public/categories');
       const foundCategory = categories.find(c => c.slug === categorySlug);
       
@@ -113,7 +125,7 @@ const CategoryPage = () => {
     );
   }
 
-  if (!category) {
+  if (!category && !searchQuery) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -121,6 +133,59 @@ const CategoryPage = () => {
           <h1 className="font-display text-3xl font-bold text-foreground mb-4">Category Not Found</h1>
           <Link to="/" className="text-accent hover:underline">Go back to home</Link>
         </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (searchQuery) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pb-12">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Search className="h-5 w-5 text-muted-foreground" />
+              <h1 className="font-display text-2xl font-bold text-foreground">
+                Search Results for "{searchQuery}"
+              </h1>
+            </div>
+            <p className="text-muted-foreground mb-6">{products.length} products found</p>
+            
+            {products.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h2 className="text-xl font-semibold mb-2">No products found</h2>
+                <p className="text-muted-foreground mb-4">Try different keywords or browse our categories</p>
+                <Link to="/">
+                  <Button>Browse All Products</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product._id}
+                    product={{
+                      id: product._id,
+                      slug: product.slug,
+                      name: product.name,
+                      price: product.price,
+                      originalPrice: product.comparePrice,
+                      image: product.images[0] || '/placeholder.jpg',
+                      category: typeof product.categoryId === 'object' ? product.categoryId.slug : '',
+                      subcategory: product.subcategoryId ? (typeof product.subcategoryId === 'object' ? product.subcategoryId.slug : '') : undefined,
+                      isNew: product.isNewArrival,
+                      isBestseller: product.isBestSeller,
+                      discount: product.comparePrice ? Math.round((1 - product.price / product.comparePrice) * 100) : undefined,
+                      stock: product.stock
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
         <Footer />
       </div>
     );

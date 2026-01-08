@@ -67,6 +67,7 @@ import TransactionsPage from "./pages/dashboard/TransactionsPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import InfluencerStatsPage from "./pages/dashboard/InfluencerStatsPage";
 import CommissionPage from "./pages/dashboard/CommissionPage";
+import NotificationsPage from "./pages/dashboard/NotificationsPage";
 
 const queryClient = new QueryClient();
 
@@ -114,7 +115,7 @@ const App = () => (
               <Route path="influencer/stats" element={<InfluencerStatsPage />} />
               <Route path="influencer/commission" element={<CommissionPage />} />
               <Route path="tickets" element={<TicketsPage />} />
-              <Route path="notifications" element={<PlaceholderPage title="Notifications" />} />
+              <Route path="notifications" element={<NotificationsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="reviews" element={<PlaceholderPage title="My Reviews" />} />
             </Route>

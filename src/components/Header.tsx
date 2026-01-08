@@ -8,16 +8,28 @@ import logo from "@/assets/logo.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { user, userLogout } = useAuth();
   const { itemCount } = useCart();
+  const { itemCount: wishlistCount } = useWishlist();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await userLogout();
     navigate('/');
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/category/all?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setSearchQuery("");
+    }
   };
 
   return (
@@ -49,9 +61,16 @@ const Header = () => {
             <Button variant="ghost" size="icon" className="text-foreground hover:text-accent" onClick={() => setIsSearchOpen(!isSearchOpen)}>
               <Search className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-foreground hover:text-accent hidden sm:flex">
-              <Heart className="h-5 w-5" />
-            </Button>
+            <Link to={user ? "/dashboard/wishlist" : "/login"}>
+              <Button variant="ghost" size="icon" className="text-foreground hover:text-accent hidden sm:flex relative">
+                <Heart className="h-5 w-5" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -110,13 +129,19 @@ const Header = () => {
         </div>
 
         <div className={`overflow-hidden transition-all duration-300 ${isSearchOpen ? "max-h-16 pb-3" : "max-h-0"}`}>
-          <div className="relative">
+          <form onSubmit={handleSearch} className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input type="text" placeholder="Search for products..." className="w-full pl-10 pr-10 py-2.5 bg-muted rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all" />
-            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setIsSearchOpen(false)}>
+            <input 
+              type="text" 
+              placeholder="Search for products..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 bg-muted rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all" 
+            />
+            <Button variant="ghost" size="icon" type="button" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setIsSearchOpen(false)}>
               <X className="h-4 w-4" />
             </Button>
-          </div>
+          </form>
         </div>
       </div>
     </header>
