@@ -1011,6 +1011,20 @@ router.get('/referrals', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// ========== USER REVIEWS ==========
+router.get('/reviews', async (req: AuthRequest, res: Response) => {
+  try {
+    const reviews = await Review.find({ userId: req.userId })
+      .populate('productId', 'name slug images')
+      .sort({ createdAt: -1 });
+
+    res.json(reviews);
+  } catch (error) {
+    console.error('Failed to get user reviews:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // ========== DASHBOARD STATS ==========
 router.get('/stats', async (req: AuthRequest, res: Response) => {
   try {
