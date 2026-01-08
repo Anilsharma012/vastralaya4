@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import { User, Order, Ticket, Wallet, Transaction, Address, Wishlist, Cart, Review, Influencer, Referral, Product, Return, Notification } from '../models';
 import { verifyToken, AuthRequest } from '../middleware/auth';
 import { sendOrderPlacedEmail } from '../services/emailService';
@@ -1007,6 +1008,40 @@ router.get('/referrals', async (req: AuthRequest, res: Response) => {
     const referrals = await Referral.find({ referrerId: influencer.userId }).populate('referredUserId', 'name email').sort({ createdAt: -1 });
     res.json(referrals);
   } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========== CHANGE PASSWORD ==========
+router.put('/change-password', async (req: AuthRequest, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Failed to change password:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
