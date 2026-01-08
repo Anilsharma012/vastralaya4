@@ -18,6 +18,7 @@ interface ProductCardProduct {
   isNew?: boolean;
   isBestseller?: boolean;
   discount?: number;
+  stock?: number;
 }
 
 interface ProductCardProps {
@@ -29,6 +30,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { toast } = useToast();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product.id);
+  const isOutOfStock = product.stock !== undefined && product.stock <= 0;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -86,13 +88,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
           />
           
           <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-            {product.isNew && (
+            {isOutOfStock && (
+              <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">OUT OF STOCK</span>
+            )}
+            {product.isNew && !isOutOfStock && (
               <span className="badge-new">NEW</span>
             )}
-            {product.discount && (
+            {product.discount && !isOutOfStock && (
               <span className="badge-sale">-{product.discount}%</span>
             )}
-            {product.isBestseller && (
+            {product.isBestseller && !isOutOfStock && (
               <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">BESTSELLER</span>
             )}
           </div>
@@ -109,17 +114,19 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <Heart className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />
           </Button>
 
-          <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-            <Button 
-              className="w-full btn-primary rounded-full text-sm font-semibold gap-2"
-              onClick={handleAddToCart}
-              disabled={isAddingToCart}
-              data-testid={`button-add-to-cart-${product.id}`}
-            >
-              <ShoppingCart className="h-4 w-4" />
-              {isAddingToCart ? 'Adding...' : 'Add to Cart'}
-            </Button>
-          </div>
+          {!isOutOfStock && (
+            <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+              <Button 
+                className="w-full btn-primary rounded-full text-sm font-semibold gap-2"
+                onClick={handleAddToCart}
+                disabled={isAddingToCart}
+                data-testid={`button-add-to-cart-${product.id}`}
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="p-3 md:p-4">

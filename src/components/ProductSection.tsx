@@ -16,6 +16,7 @@ interface ProductData {
   isFeatured: boolean;
   isNewArrival: boolean;
   isBestSeller: boolean;
+  stock: number;
 }
 
 interface ProductSectionProps {
@@ -42,7 +43,9 @@ const ProductSection = ({ title, type, showViewAll = true }: ProductSectionProps
           params.bestSeller = "true";
         }
 
-        const data = await api.get<{ products: ProductData[] }>("/public/products", { params });
+        const queryString = new URLSearchParams(params).toString();
+        const url = queryString ? `/public/products?${queryString}` : '/public/products';
+        const data = await api.get<{ products: ProductData[] }>(url);
         setProducts(data.products || []);
       } catch (error) {
         console.error(`Error fetching ${type} products:`, error);
@@ -66,6 +69,7 @@ const ProductSection = ({ title, type, showViewAll = true }: ProductSectionProps
     isNew: product.isNewArrival,
     isBestseller: product.isBestSeller,
     discount: product.comparePrice ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100) : undefined,
+    stock: product.stock,
   });
 
   return (

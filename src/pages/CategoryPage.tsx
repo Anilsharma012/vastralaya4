@@ -36,6 +36,7 @@ interface Product {
   isFeatured: boolean;
   isNewArrival: boolean;
   isBestSeller: boolean;
+  stock: number;
 }
 
 const CategoryPage = () => {
@@ -249,7 +250,8 @@ const CategoryPage = () => {
                     subcategory: product.subcategoryId ? (typeof product.subcategoryId === 'object' ? product.subcategoryId.slug : '') : undefined,
                     isNew: product.isNewArrival,
                     isBestseller: product.isBestSeller,
-                    discount: product.comparePrice ? Math.round((1 - product.price / product.comparePrice) * 100) : undefined
+                    discount: product.comparePrice ? Math.round((1 - product.price / product.comparePrice) * 100) : undefined,
+                    stock: product.stock
                   }}
                 />
               ))}

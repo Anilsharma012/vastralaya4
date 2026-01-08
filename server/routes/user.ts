@@ -623,6 +623,32 @@ router.post('/cart', async (req: AuthRequest, res: Response) => {
     const { productId, quantity, size, color } = req.body;
     if (!productId) return res.status(400).json({ message: 'Product ID is required' });
     
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    
+    let availableStock = product.stock;
+    if (color && product.colorVariants && product.colorVariants.length > 0) {
+      const colorVariant = product.colorVariants.find(
+        (cv: any) => cv.color.toLowerCase() === color.toLowerCase()
+      );
+      if (colorVariant) {
+        availableStock = colorVariant.stock || 0;
+      }
+    }
+    
+    const requestedQty = quantity || 1;
+    if (availableStock <= 0) {
+      return res.status(400).json({ message: `${product.name} is out of stock` });
+    }
+    
+    if (availableStock < requestedQty) {
+      return res.status(400).json({ 
+        message: `Only ${availableStock} items available for ${product.name}` 
+      });
+    }
+    
     let cart = await Cart.findOne({ userId: req.userId });
     if (!cart) {
       cart = new Cart({ userId: req.userId, items: [] });
@@ -632,12 +658,21 @@ router.post('/cart', async (req: AuthRequest, res: Response) => {
       item => item.productId.toString() === productId && item.size === size && item.color === color
     );
     
+    const existingQty = existingItemIndex > -1 ? cart.items[existingItemIndex].quantity : 0;
+    const totalQty = existingQty + requestedQty;
+    
+    if (totalQty > availableStock) {
+      return res.status(400).json({ 
+        message: `Cannot add more. Only ${availableStock} items available for ${product.name}` 
+      });
+    }
+    
     if (existingItemIndex > -1) {
-      cart.items[existingItemIndex].quantity += quantity || 1;
+      cart.items[existingItemIndex].quantity = totalQty;
     } else {
       cart.items.push({
         productId: new mongoose.Types.ObjectId(productId),
-        quantity: quantity || 1,
+        quantity: requestedQty,
         size,
         color,
         addedAt: new Date()
