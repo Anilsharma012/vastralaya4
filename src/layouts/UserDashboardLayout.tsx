@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +39,7 @@ import {
   Award,
   ChevronLeft,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 const menuSections = [
   {
@@ -93,12 +95,30 @@ export default function UserDashboardLayout() {
   const { user, isUserLoading, userLogout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       navigate('/login');
     }
   }, [user, isUserLoading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      fetchNotificationCount();
+      const interval = setInterval(fetchNotificationCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const fetchNotificationCount = async () => {
+    try {
+      const data = await api.get<{ count: number }>('/user/notifications/count');
+      setNotificationCount(data.count);
+    } catch (error) {
+      console.error('Failed to fetch notification count');
+    }
+  };
 
   const handleLogout = async () => {
     await userLogout();
@@ -148,15 +168,24 @@ export default function UserDashboardLayout() {
                   <SidebarMenu>
                     {section.items.map((item) => {
                       const isActive = location.pathname === item.path;
+                      const showBadge = item.label === 'Notifications' && notificationCount > 0;
                       return (
                         <SidebarMenuItem key={item.path}>
                           <SidebarMenuButton asChild isActive={isActive}>
                             <Link 
                               to={item.path}
                               data-testid={`link-dashboard-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                              className="flex items-center justify-between w-full"
                             >
-                              <item.icon className="h-4 w-4" />
-                              <span>{item.label}</span>
+                              <span className="flex items-center gap-2">
+                                <item.icon className="h-4 w-4" />
+                                <span>{item.label}</span>
+                              </span>
+                              {showBadge && (
+                                <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-xs">
+                                  {notificationCount > 99 ? '99+' : notificationCount}
+                                </Badge>
+                              )}
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -205,9 +234,16 @@ export default function UserDashboardLayout() {
               </Link>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" data-testid="button-header-notifications">
-                <Bell className="h-5 w-5" />
-              </Button>
+              <Link to="/dashboard/notifications">
+                <Button variant="ghost" size="icon" className="relative" data-testid="button-header-notifications">
+                  <Bell className="h-5 w-5" />
+                  {notificationCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
             </div>
           </header>
 

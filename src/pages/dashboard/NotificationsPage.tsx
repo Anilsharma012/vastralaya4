@@ -1,110 +1,155 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Bell,
   Trash2,
-  Mail,
   Package,
-  Star,
-  Gift
+  LogIn,
+  UserPlus,
+  Truck,
+  CheckCircle,
+  Loader2,
+  CheckCheck
 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface Notification {
-  id: string;
-  type: 'order' | 'promotion' | 'review' | 'reward';
+  _id: string;
+  type: 'signup' | 'login' | 'order_confirmed' | 'order_delivered' | 'order_shipped' | 'promotion' | 'reward' | 'system';
   title: string;
   message: string;
+  orderId?: string;
   read: boolean;
   createdAt: string;
 }
 
 export default function NotificationsPage() {
-  const notifications: Notification[] = [
-    {
-      id: '1',
-      type: 'order',
-      title: 'Order Delivered',
-      message: 'Your order #ORD-2025-001 has been delivered successfully',
-      read: false,
-      createdAt: '2025-01-05'
-    },
-    {
-      id: '2',
-      type: 'promotion',
-      title: 'Special Offer',
-      message: 'Get 20% off on all ethnic wear this weekend!',
-      read: false,
-      createdAt: '2025-01-04'
-    },
-    {
-      id: '3',
-      type: 'review',
-      title: 'Share Your Review',
-      message: 'How was your experience with the Designer Long-Sleeve Crop Blouse?',
-      read: true,
-      createdAt: '2025-01-03'
-    },
-    {
-      id: '4',
-      type: 'reward',
-      title: 'Rewards Earned',
-      message: 'You earned 35 stars on your recent purchase!',
-      read: true,
-      createdAt: '2025-01-02'
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const data = await api.get<Notification[]>('/user/notifications');
+      setNotifications(data);
+    } catch (error: any) {
+      toast({ title: error.message || 'Failed to load notifications', variant: 'destructive' });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await api.put(`/user/notifications/${id}/read`, {});
+      setNotifications(notifications.map(n => 
+        n._id === id ? { ...n, read: true } : n
+      ));
+    } catch (error: any) {
+      toast({ title: 'Failed to mark as read', variant: 'destructive' });
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.put('/user/notifications/mark-all-read', {});
+      setNotifications(notifications.map(n => ({ ...n, read: true })));
+      toast({ title: 'All notifications marked as read' });
+    } catch (error: any) {
+      toast({ title: 'Failed to mark all as read', variant: 'destructive' });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await api.delete(`/user/notifications/${id}`);
+      setNotifications(notifications.filter(n => n._id !== id));
+      toast({ title: 'Notification deleted' });
+    } catch (error: any) {
+      toast({ title: 'Failed to delete notification', variant: 'destructive' });
+    }
+  };
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'order':
-        return <Package className="h-5 w-5 text-blue-600" />;
-      case 'promotion':
-        return <Gift className="h-5 w-5 text-purple-600" />;
-      case 'review':
-        return <Star className="h-5 w-5 text-yellow-600" />;
-      case 'reward':
-        return <Badge className="h-5 w-5 text-green-600" />;
+      case 'signup':
+        return <UserPlus className="h-5 w-5 text-green-600" />;
+      case 'login':
+        return <LogIn className="h-5 w-5 text-blue-600" />;
+      case 'order_confirmed':
+        return <Package className="h-5 w-5 text-purple-600" />;
+      case 'order_shipped':
+        return <Truck className="h-5 w-5 text-orange-600" />;
+      case 'order_delivered':
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
       default:
-        return <Mail className="h-5 w-5" />;
+        return <Bell className="h-5 w-5 text-primary" />;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Notifications</h1>
-          <p className="text-muted-foreground">Stay updated with your orders and offers</p>
+          <p className="text-muted-foreground">Stay updated with your orders and account activity</p>
         </div>
-        {unreadCount > 0 && (
-          <Badge variant="default">
-            <Bell className="h-3 w-3 mr-1" />
-            {unreadCount} New
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <>
+              <Badge variant="default">
+                <Bell className="h-3 w-3 mr-1" />
+                {unreadCount} New
+              </Badge>
+              <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
+                <CheckCheck className="h-4 w-4 mr-1" />
+                Mark All Read
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No notifications yet</p>
+            <h3 className="font-semibold mb-2">No notifications yet</h3>
+            <p className="text-muted-foreground">We'll notify you about important updates here</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {notifications.map((notification) => (
             <Card 
-              key={notification.id} 
+              key={notification._id} 
               className={notification.read ? '' : 'border-primary/50 bg-primary/5'}
-              data-testid={`notification-${notification.id}`}
+              data-testid={`notification-${notification._id}`}
             >
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4 flex-1">
+                  <div 
+                    className="flex items-start gap-4 flex-1 cursor-pointer"
+                    onClick={() => !notification.read && handleMarkAsRead(notification._id)}
+                  >
                     <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                       {getIcon(notification.type)}
                     </div>
@@ -117,7 +162,7 @@ export default function NotificationsPage() {
                       </div>
                       <p className="text-sm text-muted-foreground">{notification.message}</p>
                       <p className="text-xs text-muted-foreground mt-2">
-                        {new Date(notification.createdAt).toLocaleDateString()}
+                        {new Date(notification.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -125,7 +170,8 @@ export default function NotificationsPage() {
                     variant="ghost"
                     size="icon"
                     className="flex-shrink-0"
-                    data-testid={`button-delete-${notification.id}`}
+                    onClick={() => handleDelete(notification._id)}
+                    data-testid={`button-delete-${notification._id}`}
                   >
                     <Trash2 className="h-4 w-4 text-red-600" />
                   </Button>

@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { Admin, User, Referral, Influencer } from '../models';
+import { Admin, User, Referral, Influencer, Notification } from '../models';
 import { generateToken, AuthRequest, verifyToken, verifyAdmin } from '../middleware/auth';
 import { sendLoginEmail, sendSignupEmail } from '../services/emailService';
 
@@ -197,6 +197,13 @@ router.post('/user/register', async (req, res: Response) => {
       referralCode: user.referralCode
     }).catch(err => console.error('Failed to send signup email:', err));
     
+    new Notification({
+      userId: user._id,
+      type: 'signup',
+      title: 'Welcome to Shri Balaji Vastralya!',
+      message: `Hi ${user.name}, thank you for joining us! Explore our exclusive collection of ethnic and bridal wear.`
+    }).save().catch(console.error);
+    
     res.status(201).json({
       message: 'Registration successful',
       user: { _id: user._id, email: user.email, name: user.name, referralCode: user.referralCode },
@@ -246,6 +253,13 @@ router.post('/user/login', async (req, res: Response) => {
     
     const ipAddress = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress;
     sendLoginEmail({ email: user.email, name: user.name }, ipAddress).catch(console.error);
+    
+    new Notification({
+      userId: user._id,
+      type: 'login',
+      title: 'Login Detected',
+      message: `You logged in to your account. If this wasn't you, please secure your account immediately.`
+    }).save().catch(console.error);
     
     res.json({
       message: 'Login successful',

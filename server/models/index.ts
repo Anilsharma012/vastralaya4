@@ -27,3 +27,4 @@ export { default as SocialMediaPost } from './SocialMediaPost';
 export { default as ShiprocketOrder } from './Shiprocket';
 export { default as Return } from './Return';
 export { default as EmailLog } from './EmailLog';
+export { default as Notification } from './Notification';

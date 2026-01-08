@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import mongoose from 'mongoose';
-import { Category, Subcategory, Banner, User, Product, Order, Ticket, Influencer, Wallet, Transaction, Payout, Coupon, Review, Page, Settings, AuditLog, FAQ, Announcement, Media, Attribute, Referral, SocialMediaPost, ShiprocketOrder, Return, EmailLog } from '../models';
+import { Category, Subcategory, Banner, User, Product, Order, Ticket, Influencer, Wallet, Transaction, Payout, Coupon, Review, Page, Settings, AuditLog, FAQ, Announcement, Media, Attribute, Referral, SocialMediaPost, ShiprocketOrder, Return, EmailLog, Notification } from '../models';
 import { verifyAdmin, AuthRequest } from '../middleware/auth';
 import { sendOrderShippedEmail, sendOrderDeliveredEmail } from '../services/emailService';
 
@@ -482,6 +482,36 @@ router.put('/orders/:id', async (req: AuthRequest, res: Response) => {
             await order.save();
           }
         }).catch(console.error);
+      }
+      
+      if (orderStatus === 'confirmed' && previousStatus !== 'confirmed') {
+        new Notification({
+          userId: order.userId,
+          type: 'order_confirmed',
+          title: 'Order Confirmed',
+          message: `Your order #${order.orderId} has been confirmed and is being processed.`,
+          orderId: order.orderId
+        }).save().catch(console.error);
+      }
+      
+      if (orderStatus === 'shipped' && previousStatus !== 'shipped') {
+        new Notification({
+          userId: order.userId,
+          type: 'order_shipped',
+          title: 'Order Shipped',
+          message: `Your order #${order.orderId} has been shipped.${order.trackingNumber ? ` Tracking: ${order.trackingNumber}` : ''}`,
+          orderId: order.orderId
+        }).save().catch(console.error);
+      }
+      
+      if (orderStatus === 'delivered' && previousStatus !== 'delivered') {
+        new Notification({
+          userId: order.userId,
+          type: 'order_delivered',
+          title: 'Order Delivered',
+          message: `Your order #${order.orderId} has been delivered successfully. We hope you love your purchase!`,
+          orderId: order.orderId
+        }).save().catch(console.error);
       }
     }
     
