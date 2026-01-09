@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, ChevronLeft, ChevronRight, Instagram, Youtube } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight, Instagram, Youtube, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { storeInfo } from '@/data/products';
@@ -18,6 +18,211 @@ interface SocialMediaPost {
   linkedProduct?: { _id: string; name: string; slug: string; images: string[] };
   linkedCategory?: { _id: string; name: string; slug: string; image: string };
 }
+
+interface VideoCardProps {
+  post: SocialMediaPost;
+  onClick: () => void;
+  formatViews: (views: number) => string;
+}
+
+const getYouTubeEmbedUrl = (url: string): string | null => {
+  const shortsMatch = url.match(/youtube\.com\/shorts\/([^/?]+)/);
+  if (shortsMatch) {
+    return `https://www.youtube.com/embed/${shortsMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${shortsMatch[1]}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`;
+  }
+  const videoMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&/?]+)/);
+  if (videoMatch) {
+    return `https://www.youtube.com/embed/${videoMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${videoMatch[1]}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`;
+  }
+  return null;
+};
+
+const getInstagramEmbedUrl = (url: string): string | null => {
+  const reelMatch = url.match(/instagram\.com\/(?:reel|reels|p)\/([^/?]+)/);
+  if (reelMatch) {
+    return `https://www.instagram.com/reel/${reelMatch[1]}/embed/`;
+  }
+  return null;
+};
+
+const isDirectVideoUrl = (url: string): boolean => {
+  return /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url) || url.includes('/uploads/');
+};
+
+const VideoCard = ({ post, onClick, formatViews }: VideoCardProps) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  const isDirectVideo = isDirectVideoUrl(post.videoUrl);
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(post.videoUrl);
+  const instagramEmbedUrl = getInstagramEmbedUrl(post.videoUrl);
+
+  useEffect(() => {
+    if (!isDirectVideo) return;
+    
+    const video = videoRef.current;
+    if (!video) return;
+
+    const attemptPlay = async () => {
+      try {
+        video.muted = true;
+        await video.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.log('Autoplay failed, waiting for user interaction');
+        setIsPlaying(false);
+      }
+    };
+
+    const handleCanPlay = () => {
+      attemptPlay();
+    };
+
+    const handleError = () => {
+      setHasError(true);
+      setIsPlaying(false);
+    };
+
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('error', handleError);
+
+    if (video.readyState >= 3) {
+      attemptPlay();
+    }
+
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
+    };
+  }, [post.videoUrl, isDirectVideo]);
+
+  const handleManualPlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true;
+      video.play().then(() => setIsPlaying(true)).catch(() => {});
+    }
+  };
+
+  const renderVideoContent = () => {
+    if (youtubeEmbedUrl) {
+      return (
+        <iframe
+          src={youtubeEmbedUrl}
+          className="w-full h-full object-cover"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          frameBorder="0"
+          style={{ pointerEvents: 'none' }}
+        />
+      );
+    }
+
+    if (instagramEmbedUrl) {
+      return (
+        <>
+          <img
+            src={post.thumbnail || '/placeholder.jpg'}
+            alt={post.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+              <Play className="h-7 w-7 text-pink-500 fill-pink-500 ml-1" />
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    if (isDirectVideo && !hasError) {
+      return (
+        <>
+          <video
+            ref={videoRef}
+            src={post.videoUrl}
+            poster={post.thumbnail}
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="w-full h-full object-cover"
+          />
+          {!isPlaying && (
+            <div 
+              className="absolute inset-0 flex items-center justify-center bg-black/30"
+              onClick={handleManualPlay}
+            >
+              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+                <Play className="h-6 w-6 text-primary fill-primary ml-1" />
+              </div>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <img
+          src={post.thumbnail || '/placeholder.jpg'}
+          alt={post.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+            <Play className="h-6 w-6 text-primary fill-primary ml-1" />
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <div 
+      className="flex-shrink-0 w-[160px] md:w-[200px] cursor-pointer group"
+      onClick={onClick}
+      data-testid={`card-video-${post._id}`}
+    >
+      <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-muted">
+        {renderVideoContent()}
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
+        
+        <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+          <Eye className="h-3 w-3" />
+          <span>{formatViews(post.views)}</span>
+        </div>
+        
+        <div className="absolute top-3 right-3">
+          {post.platform === 'instagram' ? (
+            <Instagram className="h-5 w-5 text-white drop-shadow-lg" />
+          ) : (
+            <Youtube className="h-5 w-5 text-white drop-shadow-lg" />
+          )}
+        </div>
+        
+        <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-none">
+          {post.linkedProduct && (
+            <div className="flex items-center gap-2 mb-2">
+              <img 
+                src={post.linkedProduct.images?.[0] || '/placeholder-product.jpg'} 
+                alt={post.linkedProduct.name}
+                className="w-8 h-8 rounded object-cover border border-white/30"
+              />
+              <span className="text-white text-xs font-medium line-clamp-1">
+                {post.linkedProduct.name}
+              </span>
+            </div>
+          )}
+          <p className="text-white text-sm font-medium line-clamp-2">{post.title}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SocialVideoSection = () => {
   const [posts, setPosts] = useState<SocialMediaPost[]>([]);
@@ -151,55 +356,12 @@ const SocialVideoSection = () => {
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {posts.map((post) => (
-                <div 
-                  key={post._id}
-                  className="flex-shrink-0 w-[160px] md:w-[200px] cursor-pointer group"
+                <VideoCard 
+                  key={post._id} 
+                  post={post} 
                   onClick={() => handleClick(post)}
-                  data-testid={`card-video-${post._id}`}
-                >
-                  <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-muted">
-                    <video
-                      src={post.videoUrl}
-                      poster={post.thumbnail}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                    
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
-                    
-                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-                      <Eye className="h-3 w-3" />
-                      <span>{formatViews(post.views)}</span>
-                    </div>
-                    
-                    <div className="absolute top-3 right-3">
-                      {post.platform === 'instagram' ? (
-                        <Instagram className="h-5 w-5 text-white drop-shadow-lg" />
-                      ) : (
-                        <Youtube className="h-5 w-5 text-white drop-shadow-lg" />
-                      )}
-                    </div>
-                    
-                    <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-none">
-                      {post.linkedProduct && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <img 
-                            src={post.linkedProduct.images?.[0] || '/placeholder-product.jpg'} 
-                            alt={post.linkedProduct.name}
-                            className="w-8 h-8 rounded object-cover border border-white/30"
-                          />
-                          <span className="text-white text-xs font-medium line-clamp-1">
-                            {post.linkedProduct.name}
-                          </span>
-                        </div>
-                      )}
-                      <p className="text-white text-sm font-medium line-clamp-2">{post.title}</p>
-                    </div>
-                  </div>
-                </div>
+                  formatViews={formatViews}
+                />
               ))}
             </div>
             
