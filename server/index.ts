@@ -7,7 +7,7 @@ import fs from 'fs';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import connectDB from './config/db';
-import { authRoutes, adminRoutes, publicRoutes, userRoutes, influencerRoutes } from './routes';
+import { authRoutes, adminRoutes, publicRoutes, userRoutes, influencerRoutes, setupRoutes } from './routes';
 
 dotenv.config();
 
@@ -22,36 +22,6 @@ const uploadsDir = path.join(__dirname, '../public/uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-
-const allowedOrigins = [
-  'http://localhost:5000',
-  'http://0.0.0.0:5000',
-  'http://localhost:3000',
-  'http://0.0.0.0:3000',
-  'http://localhost',
-  'http://127.0.0.1'
-];
-
-if (process.env.ALLOWED_ORIGINS) {
-  allowedOrigins.push(...process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()));
-}
-
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (same-domain requests) or matching origins
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else if (process.env.NODE_ENV !== 'production') {
-      callback(null, true); // Allow all in development
-    } else {
-      callback(new Error('CORS not allowed'));
-    }
-  },
-  credentials: true
-}));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(cookieParser());
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -81,6 +51,8 @@ const upload = multer({
 
 // Make upload middleware available as app.upload
 (app as any).upload = upload;
+
+setupRoutes(app);
 
 // Serve uploaded files
 app.use('/uploads', express.static(uploadsDir));

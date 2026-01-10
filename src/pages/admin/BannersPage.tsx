@@ -27,6 +27,8 @@ export default function BannersPage() {
     isActive: true,
   });
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
   useEffect(() => {
     loadBanners();
   }, []);
@@ -44,24 +46,33 @@ export default function BannersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const formDataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      formDataToSend.append(key, value.toString());
+    });
+    if (imageFile) {
+      formDataToSend.append('image', imageFile);
+    }
+
     try {
       if (editingBanner) {
-        await api.put(`/admin/banners/${editingBanner._id}`, formData);
+        await api.put(`/admin/banners/${editingBanner._id}`, formDataToSend);
         toast.success('Banner updated successfully');
       } else {
-        await api.post('/admin/banners', formData);
+        await api.post('/admin/banners', formDataToSend);
         toast.success('Banner created successfully');
       }
       setIsDialogOpen(false);
       resetForm();
       loadBanners();
     } catch (error: any) {
-      toast.error(error.message || 'Operation failed');
+      toast.error(error.response?.data?.message || error.message || 'Operation failed');
     }
   };
 
   const handleEdit = (banner: Banner) => {
     setEditingBanner(banner);
+    setImageFile(null);
     setFormData({
       title: banner.title,
       subtitle: banner.subtitle || '',
@@ -88,6 +99,7 @@ export default function BannersPage() {
 
   const resetForm = () => {
     setEditingBanner(null);
+    setImageFile(null);
     setFormData({
       title: '',
       subtitle: '',
@@ -144,13 +156,23 @@ export default function BannersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="imageUrl">Image URL</Label>
+                <Label htmlFor="image">Upload Image</Label>
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  data-testid="input-banner-upload"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">Or Image URL</Label>
                 <Input
                   id="imageUrl"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                   placeholder="https://example.com/banner.jpg"
-                  required
+                  required={!imageFile}
                   data-testid="input-banner-image"
                 />
               </div>

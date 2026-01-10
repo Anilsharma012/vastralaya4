@@ -32,9 +32,9 @@ export const api = {
     return response.json();
   },
 
-  async post<T>(endpoint: string, data?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: any, options: { headers?: Record<string, string> } = {}): Promise<T> {
     const isFormData = data instanceof FormData;
-    const headers = isFormData ? getHeaders() : getHeaders({ 'Content-Type': 'application/json' });
+    const headers = isFormData ? getHeaders(options.headers) : getHeaders({ 'Content-Type': 'application/json', ...options.headers });
 
     const response = await fetch(`${API_BASE}${endpoint}`, {
       method: 'POST',
@@ -49,12 +49,15 @@ export const api = {
     return response.json();
   },
 
-  async put<T>(endpoint: string, data: any): Promise<T> {
+  async put<T>(endpoint: string, data: any, options: { headers?: Record<string, string> } = {}): Promise<T> {
+    const isFormData = data instanceof FormData;
+    const headers = isFormData ? getHeaders(options.headers) : getHeaders({ 'Content-Type': 'application/json', ...options.headers });
+
     const response = await fetch(`${API_BASE}${endpoint}`, {
       method: 'PUT',
-      headers: getHeaders({ 'Content-Type': 'application/json' }),
+      headers,
       credentials: 'include',
-      body: JSON.stringify(data),
+      body: isFormData ? data : JSON.stringify(data),
     });
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
