@@ -25,6 +25,44 @@ interface ProductSectionProps {
   showViewAll?: boolean;
 }
 
+import { Star } from "lucide-react";
+
+const SectionTitle = ({ title, subtitle }: { title: string; subtitle?: string }) => (
+  <div className="relative w-full mb-10 overflow-hidden">
+    <div className="bg-accent py-4 px-4 md:px-8 relative overflow-hidden flex flex-col items-center justify-center text-center">
+      {/* Decorative stars/sparkles */}
+      <Star className="absolute left-4 top-4 h-4 w-4 text-white/50 animate-pulse fill-current" />
+      <Star className="absolute left-10 bottom-4 h-3 w-3 text-white/40 animate-pulse delay-100 fill-current" />
+      <Star className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/60 animate-pulse delay-300 fill-current" />
+      <Star className="absolute right-12 bottom-2 h-4 w-4 text-white/40 animate-pulse delay-200 fill-current" />
+      
+      {/* Wave pattern overlay */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }}></div>
+      
+      <h2 className="font-display text-2xl md:text-4xl font-black text-white uppercase tracking-wider relative z-10 drop-shadow-md">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="text-white/90 text-xs md:text-sm mt-1 font-medium relative z-10 tracking-tight">
+          {subtitle}
+        </p>
+      )}
+      
+      {/* Zig-zag/Scalloped edges (simulated with absolute divs) */}
+      <div className="absolute left-0 top-0 bottom-0 w-2 flex flex-col justify-around py-0.5">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="h-2 w-2 rounded-full bg-white -translate-x-1/2"></div>
+        ))}
+      </div>
+      <div className="absolute right-0 top-0 bottom-0 w-2 flex flex-col justify-around py-0.5">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="h-2 w-2 rounded-full bg-white translate-x-1/2"></div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const ProductSection = ({ title, type, showViewAll = true }: ProductSectionProps) => {
   const [products, setProducts] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,25 +110,18 @@ const ProductSection = ({ title, type, showViewAll = true }: ProductSectionProps
     stock: product.stock,
   });
 
-  return (
-    <section className="py-8 px-4">
-      <div className="container mx-auto">
-        {/* Section Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-display text-xl md:text-2xl font-bold text-foreground">
-            {title}
-          </h2>
-          {showViewAll && (
-            <Button
-              variant="ghost"
-              className="text-primary hover:text-rose-dark text-sm font-medium gap-1 px-2"
-            >
-              View All
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+  const getSubtitle = () => {
+    if (type === "new") return "New launches every day, styles that promise to capture your heart.";
+    if (type === "featured") return "Handpicked styles curated just for your special occasions.";
+    if (type === "bestseller") return "The pieces everyone is loving right now, get them before they're gone.";
+    return "";
+  };
 
+  return (
+    <section className="py-12 px-4 bg-background">
+      <div className="container mx-auto">
+        <SectionTitle title={title} subtitle={getSubtitle()} />
+        
         {/* Product Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
           {loading ? (
@@ -117,7 +148,18 @@ const ProductSection = ({ title, type, showViewAll = true }: ProductSectionProps
               No products found in this category
             </div>
           )}
-        </div>
+        {/* View All Button at bottom */}
+        {showViewAll && products.length > 0 && (
+          <div className="mt-10 flex justify-center">
+            <Button
+              variant="outline"
+              className="border-accent text-accent hover:bg-accent hover:text-white rounded-full px-8 py-6 font-semibold transition-all duration-300"
+            >
+              View All {title}
+              <ChevronRight className="h-5 w-5 ml-1" />
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );
