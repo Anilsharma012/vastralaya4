@@ -85,12 +85,17 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <h2 className="font-display text-2xl font-bold text-primary-foreground mb-1">
-              SHREE BALAJI
-            </h2>
-            <p className="text-xs tracking-[0.25em] text-primary-foreground/70 mb-1">
-              VASTRALAYA
-            </p>
+            <div className="flex items-center gap-2 mb-4">
+              <img src="/src/assets/logo.jpg" alt="Logo" className="w-12 h-12 rounded-full object-contain border border-primary-foreground/20 bg-white" />
+              <div>
+                <h2 className="font-display text-xl font-bold text-primary-foreground leading-tight">
+                  SHREE BALAJI
+                </h2>
+                <p className="text-[10px] tracking-[0.2em] text-primary-foreground/70">
+                  VASTRALAYA
+                </p>
+              </div>
+            </div>
             <p className="text-xs text-primary-foreground/50 mb-4">
               {storeInfo.tagline}
             </p>
