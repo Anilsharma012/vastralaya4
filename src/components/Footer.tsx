@@ -86,10 +86,10 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <h2 className="font-display text-2xl font-bold text-primary-foreground mb-1">
-              SHRI BALAJI
+              SHREE BALAJI
             </h2>
             <p className="text-xs tracking-[0.25em] text-primary-foreground/70 mb-1">
-              VASTRALYA
+              VASTRALAYA
             </p>
             <p className="text-xs text-primary-foreground/50 mb-4">
               {storeInfo.tagline}
