@@ -1,9 +1,32 @@
+import { useState, useEffect } from "react";
 import { Instagram, Youtube, Mail, Phone, MapPin, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { storeInfo } from "@/data/products";
+import { api } from "@/lib/api";
+
+interface CMSPage {
+  _id: string;
+  title: string;
+  slug: string;
+  isActive: boolean;
+}
 
 const Footer = () => {
+  const [cmsPages, setCmsPages] = useState<CMSPage[]>([]);
+
+  useEffect(() => {
+    const fetchPages = async () => {
+      try {
+        const response = await api.get<{ pages: CMSPage[] }>("/public/pages");
+        setCmsPages(response.pages || []);
+      } catch (error) {
+        console.error("Error fetching footer pages:", error);
+      }
+    };
+    fetchPages();
+  }, []);
+
   const shopLinks = [
     { name: "Bridal Wear", href: "/category/occasion-wear" },
     { name: "Women Ethnic", href: "/category/readymade-dresses" },
@@ -16,15 +39,16 @@ const Footer = () => {
   const helpLinks = [
     { name: "Contact Us", href: "/page/contact-us" },
     { name: "FAQ", href: "/page/faq" },
-    { name: "Shipping Policy", href: "/page/shipping-policy" },
-    { name: "Return Policy", href: "/page/return-policy" },
-    { name: "Refund Policy", href: "/page/refund-policy" },
+    ...cmsPages
+      .filter(p => p.isActive && ["shipping-policy", "return-policy", "refund-policy"].includes(p.slug))
+      .map(p => ({ name: p.title, href: `/page/${p.slug}` })),
     { name: "Track Order", href: "/track-order" },
   ];
 
   const companyLinks = [
-    { name: "About Us", href: "/page/about-us" },
-    { name: "Terms & Conditions", href: "/page/terms-and-conditions" },
+    ...cmsPages
+      .filter(p => p.isActive && ["about-us", "terms-and-conditions"].includes(p.slug))
+      .map(p => ({ name: p.title, href: `/page/${p.slug}` })),
     { name: "Store Location", href: "/about" },
   ];
 

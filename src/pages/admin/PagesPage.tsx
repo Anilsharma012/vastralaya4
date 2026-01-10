@@ -18,7 +18,7 @@ interface Page {
   content: string;
   metaTitle?: string;
   metaDescription?: string;
-  isPublished: boolean;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -91,7 +91,7 @@ const PagesPage = () => {
       content: page.content,
       metaTitle: page.metaTitle || "",
       metaDescription: page.metaDescription || "",
-      isPublished: page.isPublished
+      isPublished: page.isActive
     });
     setIsDialogOpen(true);
   };
@@ -161,8 +161,8 @@ const PagesPage = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{page.title}</h3>
-                        <Badge variant={page.isPublished ? "default" : "secondary"}>
-                          {page.isPublished ? "Published" : "Draft"}
+                        <Badge variant={page.isActive ? "default" : "secondary"}>
+                          {page.isActive ? "Published" : "Draft"}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">

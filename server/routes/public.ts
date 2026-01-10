@@ -262,6 +262,15 @@ router.get('/settings', async (req, res: Response) => {
 });
 
 // ========== CMS PAGES ==========
+router.get('/pages', async (req, res: Response) => {
+  try {
+    const pages = await Page.find({ isActive: true }).select('title slug isActive');
+    res.json({ pages });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.get('/pages/:slug', async (req, res: Response) => {
   try {
     const page = await Page.findOne({ slug: req.params.slug, isActive: true });

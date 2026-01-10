@@ -277,15 +277,62 @@ router.put('/users/:id', async (req: AuthRequest, res: Response) => {
 
 router.get('/stats', async (req, res: Response) => {
   try {
-    const [categoryCount, subcategoryCount, bannerCount, userCount, productCount, orderCount, ticketCount] = await Promise.all([
+    const [
+      categoryCount, 
+      subcategoryCount, 
+      bannerCount, 
+      userCount, 
+      productCount, 
+      orderCount, 
+      ticketCount,
+      influencerCount,
+      revenueData,
+      ordersByStatus,
+      topProducts,
+      recentOrders
+    ] = await Promise.all([
       Category.countDocuments(),
       Subcategory.countDocuments(),
       Banner.countDocuments(),
       User.countDocuments(),
       Product.countDocuments(),
       Order.countDocuments(),
-      Ticket.countDocuments()
+      Ticket.countDocuments(),
+      Influencer.countDocuments(),
+      Order.aggregate([
+        { $match: { paymentStatus: 'paid' } },
+        { $group: { _id: null, totalRevenue: { $sum: '$total' } } }
+      ]),
+      Order.aggregate([
+        { $group: { _id: '$orderStatus', count: { $sum: 1 } } }
+      ]),
+      Order.aggregate([
+        { $match: { orderStatus: 'delivered' } },
+        { $unwind: '$items' },
+        { $group: { 
+            _id: '$items.productId', 
+            name: { $first: '$items.name' },
+            sales: { $sum: '$items.quantity' },
+            revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+          } 
+        },
+        { $sort: { revenue: -1 } },
+        { $limit: 5 }
+      ]),
+      Order.find().sort({ createdAt: -1 }).limit(10).select('orderId total orderStatus createdAt')
     ]);
+    
+    const statusMap: any = {
+      pending: 0, confirmed: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0, returned: 0
+    };
+    ordersByStatus.forEach((item: any) => {
+      if (statusMap[item._id] !== undefined) {
+        statusMap[item._id] = item.count;
+      }
+    });
+
+    const totalRevenue = revenueData[0]?.totalRevenue || 0;
+    const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
     
     res.json({
       categories: categoryCount,
@@ -294,9 +341,21 @@ router.get('/stats', async (req, res: Response) => {
       users: userCount,
       products: productCount,
       orders: orderCount,
-      tickets: ticketCount
+      tickets: ticketCount,
+      influencers: influencerCount,
+      totalRevenue,
+      avgOrderValue,
+      ordersByStatus: statusMap,
+      topProducts: topProducts.map(p => ({ name: p.name, sales: p.sales, revenue: p.revenue })),
+      recentOrders: recentOrders.map(o => ({ 
+        orderNumber: o.orderId, 
+        total: o.total, 
+        status: o.orderStatus, 
+        date: o.createdAt 
+      }))
     });
   } catch (error) {
+    console.error('Stats error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1178,8 +1237,14 @@ router.get('/pages', async (req, res: Response) => {
 
 router.post('/pages', async (req: AuthRequest, res: Response) => {
   try {
+    const { title, slug, content, metaTitle, metaDescription, isPublished } = req.body;
     const page = new Page({
-      ...req.body,
+      title,
+      slug,
+      content,
+      metaTitle,
+      metaDescription,
+      isActive: isPublished !== undefined ? isPublished : true,
       createdBy: req.adminId
     });
     await page.save();
@@ -1192,10 +1257,22 @@ router.post('/pages', async (req: AuthRequest, res: Response) => {
 
 router.put('/pages/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const page = await Page.findByIdAndUpdate(req.params.id, { ...req.body, updatedAt: new Date() }, { new: true });
+    const { title, slug, content, metaTitle, metaDescription, isPublished } = req.body;
+    const page = await Page.findById(req.params.id);
     if (!page) return res.status(404).json({ message: 'Page not found' });
+
+    if (title !== undefined) page.title = title;
+    if (slug !== undefined) page.slug = slug;
+    if (content !== undefined) page.content = content;
+    if (metaTitle !== undefined) page.metaTitle = metaTitle;
+    if (metaDescription !== undefined) page.metaDescription = metaDescription;
+    if (isPublished !== undefined) page.isActive = isPublished;
+    
+    page.updatedAt = new Date();
+    await page.save();
     res.json(page);
   } catch (error) {
+    console.error('Update page error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

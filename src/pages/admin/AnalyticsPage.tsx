@@ -87,7 +87,7 @@ const AnalyticsPage = () => {
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <div className="text-xs text-muted-foreground">Revenue</div>
-                <div className="text-xl font-bold">₹{analytics.overview.totalRevenue.toLocaleString()}</div>
+                <div className="text-xl font-bold">₹{analytics.overview.totalRevenue?.toLocaleString() || 0}</div>
               </div>
             </div>
           </CardContent>
@@ -98,7 +98,7 @@ const AnalyticsPage = () => {
               <ShoppingCart className="h-5 w-5 text-blue-600" />
               <div>
                 <div className="text-xs text-muted-foreground">Orders</div>
-                <div className="text-xl font-bold">{analytics.overview.totalOrders}</div>
+                <div className="text-xl font-bold">{analytics.overview.totalOrders || 0}</div>
               </div>
             </div>
           </CardContent>
@@ -109,7 +109,7 @@ const AnalyticsPage = () => {
               <Package className="h-5 w-5 text-purple-600" />
               <div>
                 <div className="text-xs text-muted-foreground">Products</div>
-                <div className="text-xl font-bold">{analytics.overview.totalProducts}</div>
+                <div className="text-xl font-bold">{analytics.overview.totalProducts || 0}</div>
               </div>
             </div>
           </CardContent>
@@ -120,7 +120,7 @@ const AnalyticsPage = () => {
               <Users className="h-5 w-5 text-orange-600" />
               <div>
                 <div className="text-xs text-muted-foreground">Customers</div>
-                <div className="text-xl font-bold">{analytics.overview.totalUsers}</div>
+                <div className="text-xl font-bold">{analytics.overview.totalUsers || 0}</div>
               </div>
             </div>
           </CardContent>
@@ -131,7 +131,7 @@ const AnalyticsPage = () => {
               <Star className="h-5 w-5 text-yellow-600" />
               <div>
                 <div className="text-xs text-muted-foreground">Influencers</div>
-                <div className="text-xl font-bold">{analytics.overview.totalInfluencers}</div>
+                <div className="text-xl font-bold">{analytics.overview.totalInfluencers || 0}</div>
               </div>
             </div>
           </CardContent>
@@ -142,7 +142,7 @@ const AnalyticsPage = () => {
               <TrendingUp className="h-5 w-5 text-cyan-600" />
               <div>
                 <div className="text-xs text-muted-foreground">Avg Order</div>
-                <div className="text-xl font-bold">₹{analytics.overview.avgOrderValue.toLocaleString()}</div>
+                <div className="text-xl font-bold">₹{analytics.overview.avgOrderValue?.toLocaleString() || 0}</div>
               </div>
             </div>
           </CardContent>
