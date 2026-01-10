@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Save, Store, Truck, CreditCard, Users, Percent } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Save, Store, Truck, CreditCard, Users, Percent, Upload, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,6 +112,8 @@ const SettingsPage = () => {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -145,6 +147,32 @@ const SettingsPage = () => {
       toast({ title: 'Failed to load settings', variant: 'destructive' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await api.post<{ url: string }>('/admin/upload-image', formData);
+      setSettings({
+        ...settings,
+        founderNote: { ...settings.founderNote, imageUrl: response.url }
+      });
+      toast({ title: "Image uploaded successfully" });
+    } catch (error: any) {
+      toast({ 
+        title: "Upload failed", 
+        description: error.message || "Could not upload image",
+        variant: "destructive" 
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -690,14 +718,49 @@ const SettingsPage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Image URL</Label>
-                <Input
-                  value={settings.founderNote.imageUrl}
-                  onChange={(e) => setSettings({
-                    ...settings,
-                    founderNote: { ...settings.founderNote, imageUrl: e.target.value }
-                  })}
-                />
+                <Label>Founder Image</Label>
+                <div className="flex items-center gap-4">
+                  <div className="h-32 w-32 rounded-lg border bg-muted overflow-hidden flex items-center justify-center">
+                    {settings.founderNote.imageUrl ? (
+                      <img 
+                        src={settings.founderNote.imageUrl.startsWith('http') ? settings.founderNote.imageUrl : `${import.meta.env.VITE_API_URL || ''}${settings.founderNote.imageUrl}`} 
+                        alt="Founder" 
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="space-y-2 flex-1">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Image URL"
+                        value={settings.founderNote.imageUrl}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          founderNote: { ...settings.founderNote, imageUrl: e.target.value }
+                        })}
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        disabled={isUploading}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {isUploading ? "Uploading..." : "Upload"}
+                      </Button>
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Upload a photo or provide a direct image URL.</p>
+                  </div>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Message Content</Label>

@@ -253,7 +253,8 @@ router.get('/settings', async (req, res: Response) => {
           razorpayEnabled: settings.payments?.razorpayEnabled ?? false,
           razorpayKeyId: settings.payments?.razorpayKeyId || '',
           minOrderAmount: settings.payments?.minOrderAmount || 500
-        }
+        },
+        founderNote: settings.founderNote
       }
     });
   } catch (error) {
