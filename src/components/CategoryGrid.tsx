@@ -41,6 +41,12 @@ const CategoryGrid = () => {
         slug: cat.id
       }));
 
+  const getYouTubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
   if (isLoading) {
     return (
       <section className="py-10 px-4 bg-background">
@@ -79,43 +85,54 @@ const CategoryGrid = () => {
           )}
         </div>
         <div className="grid grid-cols-3 gap-x-4 gap-y-6 md:gap-x-8 md:gap-y-8">
-          {displayCategories.map((category) => (
-            <Link 
-              key={category.id} 
-              to={`/category/${category.slug || category.id}`} 
-              className="flex flex-col items-center group"
-              data-testid={`link-category-${category.id}`}
-            >
-              <div className="w-full aspect-[3/4] mb-3 overflow-hidden bg-secondary/30">
-                {category.videoUrl && category.videoUrl.trim() !== "" ? (
-                  <video
-                    key={category.videoUrl}
-                    src={category.videoUrl.trim()}
-                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    onError={(e) => {
-                      const target = e.target as HTMLVideoElement;
-                      target.style.display = 'none';
-                      const img = target.nextElementSibling as HTMLImageElement;
-                      if (img) (img as HTMLElement).style.display = 'block';
-                    }}
+          {displayCategories.map((category) => {
+            const youtubeId = category.videoUrl ? getYouTubeId(category.videoUrl) : null;
+            
+            return (
+              <Link 
+                key={category.id} 
+                to={`/category/${category.slug || category.id}`} 
+                className="flex flex-col items-center group"
+                data-testid={`link-category-${category.id}`}
+              >
+                <div className="w-full aspect-[3/4] mb-3 overflow-hidden bg-secondary/30">
+                  {youtubeId ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&modestbranding=1&rel=0&showinfo=0`}
+                      className="w-full h-full object-cover scale-150"
+                      allow="autoplay; encrypted-media"
+                      frameBorder="0"
+                    />
+                  ) : (category.videoUrl && category.videoUrl.trim() !== "") ? (
+                    <video
+                      key={category.videoUrl}
+                      src={category.videoUrl.trim()}
+                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      onError={(e) => {
+                        const target = e.target as HTMLVideoElement;
+                        target.style.display = 'none';
+                        const img = target.nextElementSibling as HTMLImageElement;
+                        if (img) (img as HTMLElement).style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  <img 
+                    src={category.image} 
+                    alt={category.name} 
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
+                    style={{ display: (category.videoUrl && category.videoUrl.trim() !== "") || youtubeId ? 'none' : 'block' }}
                   />
-                ) : null}
-                <img 
-                  src={category.image} 
-                  alt={category.name} 
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
-                  style={{ display: category.videoUrl && category.videoUrl.trim() !== "" ? 'none' : 'block' }}
-                />
-              </div>
-              <span className="text-[10px] md:text-xs font-medium text-foreground text-center uppercase tracking-[0.15em] group-hover:text-accent transition-colors">
-                {category.name}
-              </span>
-            </Link>
-          ))}
+                </div>
+                <span className="text-[10px] md:text-xs font-medium text-foreground text-center uppercase tracking-[0.15em] group-hover:text-accent transition-colors">
+                  {category.name}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
