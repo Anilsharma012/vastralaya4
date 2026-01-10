@@ -29,29 +29,40 @@ import { Star } from "lucide-react";
 
 const SectionTitle = ({ title, subtitle }: { title: string; subtitle?: string }) => (
   <div className="relative w-full mb-10 overflow-hidden">
-    <div className="bg-gradient-to-r from-white via-gold/5 to-white py-6 px-4 md:px-8 relative overflow-hidden flex flex-col items-center justify-center text-center border-y border-gold/20 shadow-sm">
-      {/* Decorative stars/sparkles - Gold colored */}
-      <Star className="absolute left-4 top-4 h-4 w-4 text-gold/40 animate-pulse fill-current" />
-      <Star className="absolute left-10 bottom-4 h-3 w-3 text-gold/30 animate-pulse delay-100 fill-current" />
-      <Star className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gold/50 animate-pulse delay-300 fill-current" />
-      <Star className="absolute right-12 bottom-2 h-4 w-4 text-gold/30 animate-pulse delay-200 fill-current" />
-      
+    <div className="bg-[#F6C90E] py-8 px-4 md:px-8 relative overflow-hidden flex flex-col items-center justify-center text-center">
       {/* Subtle Pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #D4AF37 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, black 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
       
-      <h2 className="font-display text-2xl md:text-4xl font-black uppercase tracking-[0.25em] relative z-10">
-        <span className="bg-gradient-to-r from-gold-dark via-gold to-gold-dark bg-clip-text text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.05)]">
-          {title}
-        </span>
-      </h2>
-      {subtitle && (
-        <p className="text-muted-foreground/80 text-[10px] md:text-xs mt-3 font-semibold relative z-10 tracking-[0.1em] max-w-2xl uppercase">
-          {subtitle}
-        </p>
-      )}
-      
-      {/* Decorative Gold accent line at bottom */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-[2px] bg-gradient-to-r from-transparent via-gold/50 to-transparent"></div>
+      <div className="flex items-center gap-4 relative z-10">
+        <div className="relative">
+          <Star className="h-8 w-8 text-[#B8860B] fill-[#B8860B]" />
+          <Star className="absolute -top-1 -right-1 h-4 w-4 text-cyan-400 fill-cyan-400" />
+          <Star className="absolute -bottom-1 -left-1 h-4 w-4 text-pink-400 fill-pink-400" />
+        </div>
+        
+        <div className="flex flex-col items-center">
+          <h2 className="font-display text-2xl md:text-5xl font-bold uppercase tracking-[0.1em] text-[#B8860B] drop-shadow-sm">
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-[#8B4513] text-xs md:text-sm mt-1 font-medium tracking-tight">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Decorative scalloped edges simulated with absolute divs */}
+      <div className="absolute left-0 top-0 bottom-0 w-3 flex flex-col justify-around py-1">
+        {[...Array(12)].map((_, i) => (
+          <div key={i} className="h-3 w-3 rounded-full bg-background -translate-x-1/2"></div>
+        ))}
+      </div>
+      <div className="absolute right-0 top-0 bottom-0 w-3 flex flex-col justify-around py-1">
+        {[...Array(12)].map((_, i) => (
+          <div key={i} className="h-3 w-3 rounded-full bg-background translate-x-1/2"></div>
+        ))}
+      </div>
     </div>
   </div>
 );
