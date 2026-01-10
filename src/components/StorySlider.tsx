@@ -33,6 +33,7 @@ const StorySlider = () => {
   }, []);
 
     const getYouTubeId = (url: string) => {
+      if (!url) return null;
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
       const match = url.match(regExp);
       return (match && match[2].length === 11) ? match[2] : null;
@@ -53,6 +54,7 @@ const StorySlider = () => {
             ) : categories.length > 0 ? (
               categories.map((category, index) => {
                 const youtubeId = category.videoUrl ? getYouTubeId(category.videoUrl) : null;
+                const hasVideo = (category.videoUrl && category.videoUrl.trim() !== "") || youtubeId;
                 
                 return (
                   <Link
@@ -67,12 +69,14 @@ const StorySlider = () => {
                       </div>
                       <div className="relative w-[72px] h-[72px] md:w-20 md:h-20 rounded-full overflow-hidden m-[3px] group-hover:scale-105 transition-transform duration-300 bg-muted">
                         {youtubeId ? (
-                          <iframe
-                            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&modestbranding=1&rel=0&showinfo=0`}
-                            className="w-full h-full object-cover scale-150"
-                            allow="autoplay; encrypted-media"
-                            frameBorder="0"
-                          />
+                          <div className="absolute inset-0 w-full h-full pointer-events-none">
+                            <iframe
+                              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&enablejsapi=1`}
+                              className="w-[300%] h-[300%] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                              allow="autoplay; encrypted-media"
+                              frameBorder="0"
+                            />
+                          </div>
                         ) : (category.videoUrl && category.videoUrl.trim() !== "") ? (
                           <video
                             key={category.videoUrl}
@@ -86,7 +90,7 @@ const StorySlider = () => {
                               console.error("Video playback error for", category.name, ":", e);
                               const target = e.target as HTMLVideoElement;
                               target.style.display = 'none';
-                              const img = target.nextElementSibling as HTMLImageElement;
+                              const img = target.parentElement?.querySelector('img');
                               if (img) (img as HTMLElement).style.display = 'block';
                             }}
                           />
@@ -95,7 +99,7 @@ const StorySlider = () => {
                           src={category.image || "/placeholder-category.jpg"}
                           alt={category.name}
                           className="w-full h-full object-cover"
-                          style={{ display: (category.videoUrl && category.videoUrl.trim() !== "") || youtubeId ? 'none' : 'block' }}
+                          style={{ display: hasVideo ? 'none' : 'block' }}
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = "https://placehold.co/150x150?text=" + encodeURIComponent(category.name);
                           }}
