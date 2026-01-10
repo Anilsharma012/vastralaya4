@@ -43,6 +43,8 @@ import {
   Mail
 } from 'lucide-react';
 
+import logo from "@/assets/logo.jpg";
+
 interface SidebarSection {
   title: string;
   items: SidebarItem[];
@@ -168,7 +170,12 @@ export default function AdminLayout() {
     <div className="min-h-screen flex bg-background">
       <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-card border-r transition-all duration-300 flex flex-col h-screen sticky top-0`}>
         <div className="p-4 border-b flex items-center justify-between gap-2">
-          {sidebarOpen && <h1 className="font-bold text-lg">Admin Panel</h1>}
+          {sidebarOpen && (
+            <Link to="/admin/dashboard" className="flex items-center gap-2 overflow-hidden">
+              <img src={logo} alt="Logo" className="w-8 h-8 rounded-full flex-shrink-0" />
+              <h1 className="font-bold text-lg truncate">Admin Panel</h1>
+            </Link>
+          )}
           <Button 
             variant="ghost" 
             size="icon" 

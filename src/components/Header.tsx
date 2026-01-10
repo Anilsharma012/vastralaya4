@@ -49,10 +49,10 @@ const Header = () => {
 
           <div className="flex-1 flex justify-center">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="Shri Balaji Vastralya" className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-accent" />
+              <img src={logo} alt="Shree Balaji Vastralaya" className="w-10 h-10 md:w-12 md:h-12 rounded-full object-contain border-2 border-accent bg-white" />
               <div className="hidden sm:block">
-                <h1 className="font-display text-lg md:text-xl font-bold text-primary tracking-wide leading-tight">SHRI BALAJI</h1>
-                <span className="text-[9px] md:text-[10px] tracking-[0.2em] text-muted-foreground font-medium">VASTRALYA</span>
+                <h1 className="font-display text-lg md:text-xl font-bold text-primary tracking-wide leading-tight">SHREE BALAJI</h1>
+                <span className="text-[9px] md:text-[10px] tracking-[0.2em] text-muted-foreground font-medium">VASTRALAYA</span>
               </div>
             </Link>
           </div>
