@@ -148,6 +148,7 @@ const ProductSection = ({ title, type, showViewAll = true }: ProductSectionProps
               No products found in this category
             </div>
           )}
+        </div>
         {/* View All Button at bottom */}
         {showViewAll && products.length > 0 && (
           <div className="mt-10 flex justify-center">
