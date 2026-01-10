@@ -201,7 +201,7 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="store" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="store">Store</TabsTrigger>
           <TabsTrigger value="shipping">Shipping</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
