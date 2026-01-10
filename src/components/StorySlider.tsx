@@ -56,7 +56,7 @@ const StorySlider = () => {
                   <div className="absolute inset-0 rounded-full bg-gradient-to-br from-accent via-gold to-gold-dark p-[3px] animate-pulse">
                     <div className="w-full h-full rounded-full bg-background" />
                   </div>
-                  <div className="relative w-[72px] h-[72px] md:w-20 md:h-20 rounded-full overflow-hidden m-[3px] group-hover:scale-105 transition-transform duration-300">
+                  <div className="relative w-[72px] h-[72px] md:w-20 md:h-20 rounded-full overflow-hidden m-[3px] group-hover:scale-105 transition-transform duration-300 bg-muted">
                     {category.videoUrl ? (
                       <video
                         src={category.videoUrl}
@@ -65,17 +65,24 @@ const StorySlider = () => {
                         muted
                         loop
                         playsInline
-                      />
-                    ) : (
-                      <img
-                        src={category.image || "/placeholder-category.jpg"}
-                        alt={category.name}
-                        className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://placehold.co/150x150?text=" + encodeURIComponent(category.name);
+                          console.error("Video playback error:", e);
+                          const target = e.target as HTMLVideoElement;
+                          target.style.display = 'none';
+                          const img = target.nextElementSibling as HTMLImageElement;
+                          if (img) img.style.display = 'block';
                         }}
                       />
-                    )}
+                    ) : null}
+                    <img
+                      src={category.image || "/placeholder-category.jpg"}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                      style={{ display: category.videoUrl ? 'none' : 'block' }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://placehold.co/150x150?text=" + encodeURIComponent(category.name);
+                      }}
+                    />
                   </div>
                 </div>
                 <span className="text-xs font-medium text-foreground text-center max-w-[80px] leading-tight group-hover:text-accent transition-colors">
