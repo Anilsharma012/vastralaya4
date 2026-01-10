@@ -30,12 +30,14 @@ const CategoryGrid = () => {
         id: cat._id,
         name: cat.name,
         image: cat.image || '/placeholder-category.jpg',
+        videoUrl: cat.videoUrl,
         slug: cat.slug
       }))
     : gridCategories.map(cat => ({
         id: cat.id,
         name: cat.name,
         image: cat.image,
+        videoUrl: undefined,
         slug: cat.id
       }));
 
@@ -85,11 +87,22 @@ const CategoryGrid = () => {
               data-testid={`link-category-${category.id}`}
             >
               <div className="w-full aspect-[3/4] mb-3 overflow-hidden bg-secondary/30">
-                <img 
-                  src={category.image} 
-                  alt={category.name} 
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
-                />
+                {category.videoUrl ? (
+                  <video
+                    src={category.videoUrl}
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  />
+                ) : (
+                  <img 
+                    src={category.image} 
+                    alt={category.name} 
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
+                  />
+                )}
               </div>
               <span className="text-[10px] md:text-xs font-medium text-foreground text-center uppercase tracking-[0.15em] group-hover:text-accent transition-colors">
                 {category.name}

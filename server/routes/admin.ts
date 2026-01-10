@@ -19,7 +19,7 @@ router.get('/categories', async (req, res: Response) => {
 
 router.post('/categories', async (req: AuthRequest, res: Response) => {
   try {
-    const { name, description, image, sortOrder, isActive } = req.body;
+    const { name, description, image, videoUrl, sortOrder, isActive } = req.body;
     
     if (!name) {
       return res.status(400).json({ message: 'Name is required' });
@@ -37,6 +37,7 @@ router.post('/categories', async (req: AuthRequest, res: Response) => {
       slug,
       description,
       image,
+      videoUrl,
       sortOrder: sortOrder || 0,
       isActive: isActive !== undefined ? isActive : true
     });
@@ -51,7 +52,7 @@ router.post('/categories', async (req: AuthRequest, res: Response) => {
 
 router.put('/categories/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const { name, description, image, sortOrder, isActive } = req.body;
+    const { name, description, image, videoUrl, sortOrder, isActive } = req.body;
     
     const category = await Category.findById(req.params.id);
     if (!category) {
@@ -70,6 +71,7 @@ router.put('/categories/:id', async (req: AuthRequest, res: Response) => {
     
     if (description !== undefined) category.description = description;
     if (image !== undefined) category.image = image;
+    if (videoUrl !== undefined) category.videoUrl = videoUrl;
     if (sortOrder !== undefined) category.sortOrder = sortOrder;
     if (isActive !== undefined) category.isActive = isActive;
     
