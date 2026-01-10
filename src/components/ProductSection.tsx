@@ -29,29 +29,29 @@ import { Star } from "lucide-react";
 
 const SectionTitle = ({ title, subtitle }: { title: string; subtitle?: string }) => (
   <div className="relative w-full mb-10 overflow-hidden">
-    <div className="bg-white py-6 px-4 md:px-8 relative overflow-hidden flex flex-col items-center justify-center text-center border-y-2 border-gold/30">
+    <div className="bg-gradient-to-r from-white via-gold/5 to-white py-6 px-4 md:px-8 relative overflow-hidden flex flex-col items-center justify-center text-center border-y border-gold/20 shadow-sm">
       {/* Decorative stars/sparkles - Gold colored */}
-      <Star className="absolute left-4 top-4 h-4 w-4 text-gold/50 animate-pulse fill-current" />
-      <Star className="absolute left-10 bottom-4 h-3 w-3 text-gold/40 animate-pulse delay-100 fill-current" />
-      <Star className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gold/60 animate-pulse delay-300 fill-current" />
-      <Star className="absolute right-12 bottom-2 h-4 w-4 text-gold/40 animate-pulse delay-200 fill-current" />
+      <Star className="absolute left-4 top-4 h-4 w-4 text-gold/40 animate-pulse fill-current" />
+      <Star className="absolute left-10 bottom-4 h-3 w-3 text-gold/30 animate-pulse delay-100 fill-current" />
+      <Star className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gold/50 animate-pulse delay-300 fill-current" />
+      <Star className="absolute right-12 bottom-2 h-4 w-4 text-gold/30 animate-pulse delay-200 fill-current" />
       
-      {/* Wave pattern overlay - Subtle Gold */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #D4AF37 1px, transparent 0)', backgroundSize: '20px 20px' }}></div>
+      {/* Subtle Pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #D4AF37 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
       
-      <h2 className="font-display text-2xl md:text-4xl font-black text-foreground uppercase tracking-[0.2em] relative z-10">
-        <span className="bg-gradient-to-r from-gold-dark via-gold to-gold-dark bg-clip-text text-transparent drop-shadow-sm">
+      <h2 className="font-display text-2xl md:text-4xl font-black uppercase tracking-[0.25em] relative z-10">
+        <span className="bg-gradient-to-r from-gold-dark via-gold to-gold-dark bg-clip-text text-transparent drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.05)]">
           {title}
         </span>
       </h2>
       {subtitle && (
-        <p className="text-muted-foreground text-xs md:text-sm mt-2 font-medium relative z-10 tracking-wider max-w-2xl">
+        <p className="text-muted-foreground/80 text-[10px] md:text-xs mt-3 font-semibold relative z-10 tracking-[0.1em] max-w-2xl uppercase">
           {subtitle}
         </p>
       )}
       
-      {/* Decorative Gold lines */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-gold to-transparent"></div>
+      {/* Decorative Gold accent line at bottom */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-[2px] bg-gradient-to-r from-transparent via-gold/50 to-transparent"></div>
     </div>
   </div>
 );
