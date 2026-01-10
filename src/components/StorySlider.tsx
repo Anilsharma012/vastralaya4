@@ -8,6 +8,7 @@ interface Category {
   name: string;
   slug: string;
   image?: string;
+  videoUrl?: string;
 }
 
 const StorySlider = () => {
@@ -56,14 +57,25 @@ const StorySlider = () => {
                     <div className="w-full h-full rounded-full bg-background" />
                   </div>
                   <div className="relative w-[72px] h-[72px] md:w-20 md:h-20 rounded-full overflow-hidden m-[3px] group-hover:scale-105 transition-transform duration-300">
-                    <img
-                      src={category.image || "/placeholder-category.jpg"}
-                      alt={category.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://placehold.co/150x150?text=" + encodeURIComponent(category.name);
-                      }}
-                    />
+                    {category.videoUrl ? (
+                      <video
+                        src={category.videoUrl}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={category.image || "/placeholder-category.jpg"}
+                        alt={category.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://placehold.co/150x150?text=" + encodeURIComponent(category.name);
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
                 <span className="text-xs font-medium text-foreground text-center max-w-[80px] leading-tight group-hover:text-accent transition-colors">

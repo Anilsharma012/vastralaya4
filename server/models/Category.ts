@@ -5,6 +5,7 @@ export interface ICategory extends Document {
   slug: string;
   description?: string;
   image?: string;
+  videoUrl?: string;
   sortOrder: number;
   isActive: boolean;
   createdAt: Date;
@@ -16,6 +17,7 @@ const CategorySchema = new Schema<ICategory>({
   slug: { type: String, required: true, unique: true },
   description: { type: String },
   image: { type: String },
+  videoUrl: { type: String },
   sortOrder: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });

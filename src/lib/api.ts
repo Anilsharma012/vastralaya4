@@ -118,6 +118,7 @@ export interface Category {
   slug: string;
   description?: string;
   image?: string;
+  videoUrl?: string;
   sortOrder: number;
   isActive: boolean;
 }

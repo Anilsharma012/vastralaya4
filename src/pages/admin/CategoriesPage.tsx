@@ -19,6 +19,7 @@ export default function CategoriesPage() {
     name: '',
     description: '',
     image: '',
+    videoUrl: '',
     sortOrder: 0,
     isActive: true,
   });
@@ -62,6 +63,7 @@ export default function CategoriesPage() {
       name: category.name,
       description: category.description || '',
       image: category.image || '',
+      videoUrl: category.videoUrl || '',
       sortOrder: category.sortOrder,
       isActive: category.isActive,
     });
@@ -81,7 +83,7 @@ export default function CategoriesPage() {
 
   const resetForm = () => {
     setEditingCategory(null);
-    setFormData({ name: '', description: '', image: '', sortOrder: 0, isActive: true });
+    setFormData({ name: '', description: '', image: '', videoUrl: '', sortOrder: 0, isActive: true });
   };
 
   const openNewDialog = () => {
@@ -135,6 +137,16 @@ export default function CategoriesPage() {
                   onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                   placeholder="https://example.com/image.jpg"
                   data-testid="input-category-image"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="videoUrl">Video URL</Label>
+                <Input
+                  id="videoUrl"
+                  value={formData.videoUrl}
+                  onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                  placeholder="https://example.com/video.mp4"
+                  data-testid="input-category-video"
                 />
               </div>
               <div className="space-y-2">
