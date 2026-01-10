@@ -1210,11 +1210,11 @@ router.put('/settings', async (req: AuthRequest, res: Response) => {
     
     if (req.body.founderNote) {
       const { founderNote } = req.body;
-      settings.set('founderNote.title', founderNote.title ?? settings.founderNote.title);
-      settings.set('founderNote.name', founderNote.name ?? settings.founderNote.name);
-      settings.set('founderNote.designation', founderNote.designation ?? settings.founderNote.designation);
-      settings.set('founderNote.message', founderNote.message ?? settings.founderNote.message);
-      settings.set('founderNote.imageUrl', founderNote.imageUrl ?? settings.founderNote.imageUrl);
+      settings.set('founderNote.title', founderNote.title !== undefined ? founderNote.title : settings.founderNote.title);
+      settings.set('founderNote.author', founderNote.author !== undefined ? founderNote.author : settings.founderNote.author);
+      settings.set('founderNote.designation', founderNote.designation !== undefined ? founderNote.designation : settings.founderNote.designation);
+      settings.set('founderNote.message', founderNote.message !== undefined ? founderNote.message : settings.founderNote.message);
+      settings.set('founderNote.imageUrl', founderNote.imageUrl !== undefined ? founderNote.imageUrl : settings.founderNote.imageUrl);
     }
     
     await settings.save();
