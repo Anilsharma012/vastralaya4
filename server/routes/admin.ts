@@ -5,7 +5,6 @@ import { verifyAdmin, AuthRequest } from '../middleware/auth';
 import { sendOrderShippedEmail, sendOrderDeliveredEmail } from '../services/emailService';
 
 const router = Router();
-const app = router as any; // Temporary cast to access shared properties if needed, though index.ts handles the actual app setup
 
 router.use(verifyAdmin);
 
@@ -186,64 +185,78 @@ router.get('/banners', async (req, res: Response) => {
   }
 });
 
-router.post('/banners', (app as any).upload.single('image'), async (req: AuthRequest, res: Response) => {
+router.post('/banners', async (req: AuthRequest, res: Response) => {
   try {
-    const { title, subtitle, imageUrl: imageUrlFromReq, targetLink, buttonText, placement, isActive, priority } = req.body;
-    
-    let imageUrl = imageUrlFromReq;
-    if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
-    }
+    const upload = (req.app as any).upload;
+    if (!upload) return res.status(500).json({ message: 'Upload middleware not initialized' });
 
-    if (!title || !imageUrl) {
-      return res.status(400).json({ message: 'Title and image are required' });
-    }
-    
-    const banner = new Banner({
-      title,
-      subtitle,
-      imageUrl,
-      targetLink,
-      buttonText,
-      placement: placement || 'hero',
-      isActive: isActive !== undefined ? (typeof isActive === 'string' ? isActive === 'true' : isActive) : true,
-      priority: priority ? parseInt(priority) : 0
+    upload.single('image')(req, res, async (err: any) => {
+      if (err) return res.status(400).json({ message: err.message });
+
+      const { title, subtitle, imageUrl: imageUrlFromReq, targetLink, buttonText, placement, isActive, priority } = req.body;
+      
+      let imageUrl = imageUrlFromReq;
+      if (req.file) {
+        imageUrl = `/uploads/${req.file.filename}`;
+      }
+
+      if (!title || !imageUrl) {
+        return res.status(400).json({ message: 'Title and image are required' });
+      }
+      
+      const banner = new Banner({
+        title,
+        subtitle,
+        imageUrl,
+        targetLink,
+        buttonText,
+        placement: placement || 'hero',
+        isActive: isActive !== undefined ? (typeof isActive === 'string' ? isActive === 'true' : isActive) : true,
+        priority: priority ? parseInt(priority) : 0
+      });
+      
+      await banner.save();
+      res.status(201).json(banner);
     });
-    
-    await banner.save();
-    res.status(201).json(banner);
   } catch (error) {
     console.error('Create banner error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-router.put('/banners/:id', (app as any).upload.single('image'), async (req: AuthRequest, res: Response) => {
+router.put('/banners/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const { title, subtitle, imageUrl: imageUrlFromReq, targetLink, buttonText, placement, isActive, priority } = req.body;
-    
-    const banner = await Banner.findById(req.params.id);
-    if (!banner) {
-      return res.status(404).json({ message: 'Banner not found' });
-    }
-    
-    if (title) banner.title = title;
-    if (subtitle !== undefined) banner.subtitle = subtitle;
-    
-    if (req.file) {
-      banner.imageUrl = `/uploads/${req.file.filename}`;
-    } else if (imageUrlFromReq) {
-      banner.imageUrl = imageUrlFromReq;
-    }
+    const upload = (req.app as any).upload;
+    if (!upload) return res.status(500).json({ message: 'Upload middleware not initialized' });
 
-    if (targetLink !== undefined) banner.targetLink = targetLink;
-    if (buttonText !== undefined) banner.buttonText = buttonText;
-    if (placement) banner.placement = placement;
-    if (isActive !== undefined) banner.isActive = typeof isActive === 'string' ? isActive === 'true' : isActive;
-    if (priority !== undefined) banner.priority = parseInt(priority) || 0;
-    
-    await banner.save();
-    res.json(banner);
+    upload.single('image')(req, res, async (err: any) => {
+      if (err) return res.status(400).json({ message: err.message });
+
+      const { title, subtitle, imageUrl: imageUrlFromReq, targetLink, buttonText, placement, isActive, priority } = req.body;
+      
+      const banner = await Banner.findById(req.params.id);
+      if (!banner) {
+        return res.status(404).json({ message: 'Banner not found' });
+      }
+      
+      if (title) banner.title = title;
+      if (subtitle !== undefined) banner.subtitle = subtitle;
+      
+      if (req.file) {
+        banner.imageUrl = `/uploads/${req.file.filename}`;
+      } else if (imageUrlFromReq) {
+        banner.imageUrl = imageUrlFromReq;
+      }
+
+      if (targetLink !== undefined) banner.targetLink = targetLink;
+      if (buttonText !== undefined) banner.buttonText = buttonText;
+      if (placement) banner.placement = placement;
+      if (isActive !== undefined) banner.isActive = typeof isActive === 'string' ? isActive === 'true' : isActive;
+      if (priority !== undefined) banner.priority = parseInt(priority) || 0;
+      
+      await banner.save();
+      res.json(banner);
+    });
   } catch (error) {
     console.error('Update banner error:', error);
     res.status(500).json({ message: 'Server error' });
