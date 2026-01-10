@@ -156,6 +156,20 @@ export default function BannersPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label>Image Preview</Label>
+                <div className="h-40 w-full rounded-md border bg-muted overflow-hidden flex items-center justify-center">
+                  {(imageFile || formData.imageUrl) ? (
+                    <img 
+                      src={imageFile ? URL.createObjectURL(imageFile) : (formData.imageUrl.startsWith('http') ? formData.imageUrl : `${import.meta.env.VITE_API_URL || ''}${formData.imageUrl}`)} 
+                      alt="Preview" 
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">No image selected</span>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="image">Upload Image</Label>
                 <Input
                   id="image"
@@ -251,6 +265,7 @@ export default function BannersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Preview</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Placement</TableHead>
                   <TableHead>Priority</TableHead>
@@ -261,6 +276,18 @@ export default function BannersPage() {
               <TableBody>
                 {banners.map((banner) => (
                   <TableRow key={banner._id} data-testid={`row-banner-${banner._id}`}>
+                    <TableCell>
+                      <div className="h-12 w-20 rounded overflow-hidden bg-muted">
+                        <img 
+                          src={banner.imageUrl.startsWith('http') ? banner.imageUrl : `${import.meta.env.VITE_API_URL || ''}${banner.imageUrl}`} 
+                          alt={banner.title}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
+                          }}
+                        />
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium">{banner.title}</TableCell>
                     <TableCell className="capitalize">{banner.placement}</TableCell>
                     <TableCell>{banner.priority}</TableCell>
