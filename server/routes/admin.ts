@@ -1208,6 +1208,15 @@ router.put('/settings', async (req: AuthRequest, res: Response) => {
       settings.set('rewards.minRedeemPoints', rewards.minRedeemPoints ?? settings.rewards.minRedeemPoints);
     }
     
+    if (req.body.founderNote) {
+      const { founderNote } = req.body;
+      settings.set('founderNote.title', founderNote.title ?? settings.founderNote.title);
+      settings.set('founderNote.name', founderNote.name ?? settings.founderNote.name);
+      settings.set('founderNote.designation', founderNote.designation ?? settings.founderNote.designation);
+      settings.set('founderNote.message', founderNote.message ?? settings.founderNote.message);
+      settings.set('founderNote.imageUrl', founderNote.imageUrl ?? settings.founderNote.imageUrl);
+    }
+    
     await settings.save();
     
     const savedSettings = await Settings.findById(settings._id);
