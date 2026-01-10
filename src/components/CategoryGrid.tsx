@@ -89,6 +89,7 @@ const CategoryGrid = () => {
               <div className="w-full aspect-[3/4] mb-3 overflow-hidden bg-secondary/30">
                 {category.videoUrl && category.videoUrl.trim() !== "" ? (
                   <video
+                    key={category.videoUrl}
                     src={category.videoUrl.trim()}
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                     autoPlay
@@ -99,7 +100,7 @@ const CategoryGrid = () => {
                       const target = e.target as HTMLVideoElement;
                       target.style.display = 'none';
                       const img = target.nextElementSibling as HTMLImageElement;
-                      if (img) img.style.display = 'block';
+                      if (img) (img as HTMLElement).style.display = 'block';
                     }}
                   />
                 ) : null}

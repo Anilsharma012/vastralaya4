@@ -59,6 +59,7 @@ const StorySlider = () => {
                   <div className="relative w-[72px] h-[72px] md:w-20 md:h-20 rounded-full overflow-hidden m-[3px] group-hover:scale-105 transition-transform duration-300 bg-muted">
                     {category.videoUrl && category.videoUrl.trim() !== "" ? (
                       <video
+                        key={category.videoUrl}
                         src={category.videoUrl.trim()}
                         className="w-full h-full object-cover"
                         autoPlay
@@ -66,11 +67,11 @@ const StorySlider = () => {
                         loop
                         playsInline
                         onError={(e) => {
-                          console.error("Video playback error:", e);
+                          console.error("Video playback error for", category.name, ":", e);
                           const target = e.target as HTMLVideoElement;
                           target.style.display = 'none';
                           const img = target.nextElementSibling as HTMLImageElement;
-                          if (img) img.style.display = 'block';
+                          if (img) (img as HTMLElement).style.display = 'block';
                         }}
                       />
                     ) : null}
