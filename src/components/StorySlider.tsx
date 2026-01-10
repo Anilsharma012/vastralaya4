@@ -57,9 +57,9 @@ const StorySlider = () => {
                     <div className="w-full h-full rounded-full bg-background" />
                   </div>
                   <div className="relative w-[72px] h-[72px] md:w-20 md:h-20 rounded-full overflow-hidden m-[3px] group-hover:scale-105 transition-transform duration-300 bg-muted">
-                    {category.videoUrl ? (
+                    {category.videoUrl && category.videoUrl.trim() !== "" ? (
                       <video
-                        src={category.videoUrl}
+                        src={category.videoUrl.trim()}
                         className="w-full h-full object-cover"
                         autoPlay
                         muted
@@ -78,7 +78,7 @@ const StorySlider = () => {
                       src={category.image || "/placeholder-category.jpg"}
                       alt={category.name}
                       className="w-full h-full object-cover"
-                      style={{ display: category.videoUrl ? 'none' : 'block' }}
+                      style={{ display: category.videoUrl && category.videoUrl.trim() !== "" ? 'none' : 'block' }}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "https://placehold.co/150x150?text=" + encodeURIComponent(category.name);
                       }}

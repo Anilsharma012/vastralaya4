@@ -87,9 +87,9 @@ const CategoryGrid = () => {
               data-testid={`link-category-${category.id}`}
             >
               <div className="w-full aspect-[3/4] mb-3 overflow-hidden bg-secondary/30">
-                {category.videoUrl ? (
+                {category.videoUrl && category.videoUrl.trim() !== "" ? (
                   <video
-                    src={category.videoUrl}
+                    src={category.videoUrl.trim()}
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                     autoPlay
                     muted
@@ -107,7 +107,7 @@ const CategoryGrid = () => {
                   src={category.image} 
                   alt={category.name} 
                   className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
-                  style={{ display: category.videoUrl ? 'none' : 'block' }}
+                  style={{ display: category.videoUrl && category.videoUrl.trim() !== "" ? 'none' : 'block' }}
                 />
               </div>
               <span className="text-[10px] md:text-xs font-medium text-foreground text-center uppercase tracking-[0.15em] group-hover:text-accent transition-colors">
