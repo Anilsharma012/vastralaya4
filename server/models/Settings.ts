@@ -47,6 +47,13 @@ export interface ISettings extends Document {
     redeemRatio: number;
     minRedeemPoints: number;
   };
+  founderNote: {
+    title: string;
+    message: string;
+    author: string;
+    designation: string;
+    imageUrl: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -97,6 +104,13 @@ const SettingsSchema = new Schema<ISettings>({
     pointsPerRupee: { type: Number, default: 1 },
     redeemRatio: { type: Number, default: 100 },
     minRedeemPoints: { type: Number, default: 100 }
+  },
+  founderNote: {
+    title: { type: String, default: 'A Message From Our Heart' },
+    message: { type: String, default: 'We love you and so when you step into our store, we leave no stones unturned to make you feel special & close to us. We give a humane touch to your shopping experience.\n\nWe are personally available to help you find your perfect fit. Not only that, we suggest styling tips for your body types & individual expression. Thus, helping you to choose the right styles.' },
+    author: { type: String, default: 'Chhavi Kumar Chaddha' },
+    designation: { type: String, default: 'LA GLITS FOUNDER' },
+    imageUrl: { type: String, default: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1000&auto=format&fit=crop' }
   }
 }, { timestamps: true });
 

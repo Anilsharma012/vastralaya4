@@ -50,6 +50,13 @@ interface Settings {
     platinumRate: number;
     diamondRate: number;
   };
+  founderNote: {
+    title: string;
+    message: string;
+    author: string;
+    designation: string;
+    imageUrl: string;
+  };
 }
 
 const defaultSettings: Settings = {
@@ -91,6 +98,13 @@ const defaultSettings: Settings = {
     goldRate: 7,
     platinumRate: 8,
     diamondRate: 10
+  },
+  founderNote: {
+    title: 'A Message From Our Heart',
+    message: 'We love you and so when you step into our store, we leave no stones unturned to make you feel special & close to us. We give a humane touch to your shopping experience.\n\nWe are personally available to help you find your perfect fit. Not only that, we suggest styling tips for your body types & individual expression. Thus, helping you to choose the right styles.',
+    author: 'Chhavi Kumar Chaddha',
+    designation: 'LA GLITS FOUNDER',
+    imageUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1000&auto=format&fit=crop'
   }
 };
 
@@ -121,7 +135,8 @@ const SettingsPage = () => {
             razorpayKeySecret: data.settings.payments?.razorpayKeySecret ? '••••••••••••••••' : ''
           },
           referral: { ...defaultSettings.referral, ...data.settings.referral },
-          commission: { ...defaultSettings.commission, ...data.settings.commission }
+          commission: { ...defaultSettings.commission, ...data.settings.commission },
+          founderNote: { ...defaultSettings.founderNote, ...data.settings.founderNote }
         };
         setSettings(loadedSettings);
       }
@@ -155,7 +170,8 @@ const SettingsPage = () => {
             razorpayKeySecret: (result.settings as any).payments?.razorpayKeySecret ? '••••••••••••••••' : ''
           },
           referral: { ...defaultSettings.referral, ...result.settings.referral },
-          commission: { ...defaultSettings.commission, ...result.settings.commission }
+          commission: { ...defaultSettings.commission, ...result.settings.commission },
+          founderNote: { ...defaultSettings.founderNote, ...result.settings.founderNote }
         };
         setSettings(loadedSettings);
       }
@@ -191,6 +207,7 @@ const SettingsPage = () => {
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="referral">Referral</TabsTrigger>
           <TabsTrigger value="commission">Commission</TabsTrigger>
+          <TabsTrigger value="founder">Founder Note</TabsTrigger>
         </TabsList>
 
         <TabsContent value="store">
@@ -630,6 +647,68 @@ const SettingsPage = () => {
                     data-testid="input-diamond-rate"
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="founder">
+          <Card>
+            <CardHeader>
+              <CardTitle>Founder Note Settings</CardTitle>
+              <CardDescription>Manage the "Note by Founder" section on the homepage</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Section Title</Label>
+                <Input
+                  value={settings.founderNote.title}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    founderNote: { ...settings.founderNote, title: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Founder Name</Label>
+                <Input
+                  value={settings.founderNote.author}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    founderNote: { ...settings.founderNote, author: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Designation</Label>
+                <Input
+                  value={settings.founderNote.designation}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    founderNote: { ...settings.founderNote, designation: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Image URL</Label>
+                <Input
+                  value={settings.founderNote.imageUrl}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    founderNote: { ...settings.founderNote, imageUrl: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Message Content</Label>
+                <Textarea
+                  className="min-h-[200px]"
+                  value={settings.founderNote.message}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    founderNote: { ...settings.founderNote, message: e.target.value }
+                  })}
+                />
               </div>
             </CardContent>
           </Card>
