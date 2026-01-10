@@ -83,10 +83,10 @@ export default function InfluencerStatsPage() {
       }
 
       const [dashboardData, referralsData, ordersData, earningsData] = await Promise.all([
-        api.get<{ stats: any, recentReferrals: any[] }>('/influencer/dashboard').catch(() => null),
-        api.get<{ referrals: Referral[] }>('/influencer/referrals').catch(() => ({ referrals: [] })),
-        api.get<{ orders: Order[] }>('/influencer/orders').catch(() => ({ orders: [] })),
-        api.get<{ payouts: Payout[], monthlyEarnings: any[], commission: any }>('/influencer/earnings').catch(() => ({ payouts: [], monthlyEarnings: [], commission: {} }))
+        api.get<any>('/influencer/dashboard').catch(() => null),
+        api.get<any>('/influencer/referrals').catch(() => ({ referrals: [] })),
+        api.get<any>('/influencer/orders').catch(() => ({ orders: [] })),
+        api.get<any>('/influencer/earnings').catch(() => ({ payouts: [], monthlyEarnings: [], commission: {} }))
       ]);
       
       setReferrals(referralsData?.referrals || []);

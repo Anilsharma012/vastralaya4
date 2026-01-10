@@ -199,8 +199,8 @@ router.get('/social-media-posts', async (req, res: Response) => {
       categoryIds.length > 0 ? Category.find({ _id: { $in: categoryIds } }).select('name slug image') : Promise.resolve([])
     ]);
     
-    const productMap = new Map<string, any>(products.map(p => [p._id.toString(), p]));
-    const categoryMap = new Map<string, any>(categories.map(c => [c._id.toString(), c]));
+    const productMap = new Map<string, any>(products.map(p => [p._id.toString(), p] as [string, any]));
+    const categoryMap = new Map<string, any>(categories.map(c => [c._id.toString(), c] as [string, any]));
     
     const populatedPosts = posts.map(post => {
       const postObj: any = post.toObject();

@@ -129,7 +129,8 @@ router.get('/dashboard', verifyInfluencer, async (req: any, res: Response) => {
       monthlyReferrals,
       weeklyReferrals,
       convertedReferrals,
-      recentReferrals
+      recentReferrals,
+      totalRegisteredUsers
     ] = await Promise.all([
       Referral.countDocuments(referralQuery),
       Referral.countDocuments({ ...referralQuery, createdAt: { $gte: startOfMonth } }),
@@ -139,8 +140,12 @@ router.get('/dashboard', verifyInfluencer, async (req: any, res: Response) => {
         .populate('referredUserId', 'name email createdAt')
         .populate('orderId', 'orderId total orderStatus')
         .sort({ createdAt: -1 })
-        .limit(10)
+        .limit(10),
+      User.countDocuments({ referralCode: influencer.referralCode })
     ]);
+    
+    // Fallback if referral records are missing but users have the code
+    const actualTotalReferrals = Math.max(totalReferrals, totalRegisteredUsers);
     
     const ordersFromReferrals = await Referral.find({ ...referralQuery, orderId: { $exists: true } });
     const orderIds = ordersFromReferrals.map(r => r.orderId);
@@ -175,7 +180,7 @@ router.get('/dashboard', verifyInfluencer, async (req: any, res: Response) => {
     
     res.json({
       stats: {
-        totalReferrals,
+        totalReferrals: actualTotalReferrals,
         monthlyReferrals,
         weeklyReferrals,
         convertedReferrals,
